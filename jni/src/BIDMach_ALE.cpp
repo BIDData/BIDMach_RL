@@ -230,10 +230,12 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_getScreenData
   int size = screen.arraySize();
   if (jdata == NULL) {
     jdata = env->NewByteArray(size);
-  } else {
-    if (env->GetArrayLength(jdata) != size) {
-      return 2;
-    }
+  } 
+  if (jdata == NULL) {
+    return 2;
+  }
+  if (env->GetArrayLength(jdata) != size) {
+    return 3;
   }
   jbyte *data = env->GetByteArrayElements(jdata, 0);
   jbyte *screendata = (jbyte *)screen.getArray();
