@@ -111,6 +111,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setInt
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setFloat
+
 (JNIEnv *env, jclass clazz, jobject jale, jstring jvname, jfloat fval)
 {
   ALEInterface *alep = getALE(env, clazz, jale);
@@ -191,13 +192,56 @@ JNIEXPORT jboolean JNICALL Java_edu_berkeley_bid_ALE_game_1over
   return done;
 }
 
-JNIEXPORT jboolean JNICALL Java_edu_berkeley_bid_ALE_reset_1game
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_reset_1game
 (JNIEnv *env, jclass clazz, jobject jale)
 {
   ALEInterface *alep = getALE(env, clazz, jale);
   int status = (alep != NULL);
   alep->reset_game();
   return status;
+}
+
+JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getScreenDims
+(JNIEnv *env, jclass clazz, jobject jale)
+{
+  ALEInterface *alep = getALE(env, clazz, jale);
+  jintArray result = env->NewIntArray(3);
+  if (result == NULL) {
+    return NULL; 
+  }
+  jint *body = env->GetIntArrayElements(result, 0);
+  const ALEScreen& screen= alep->getScreen();
+  body[0] = screen.width();
+  body[1] = screen.height();
+  body[2] = sizeof(pixel_t);
+  env->ReleaseIntArrayElements(result, body, 0);
+  return result;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_getScreenData
+(JNIEnv *env, jclass clazz, jobject jale, jbyteArray jdata)
+{
+  int i;
+  ALEInterface *alep = getALE(env, clazz, jale);
+  if (alep == NULL) {
+    return 1;
+  }
+  const ALEScreen& screen= alep->getScreen();
+  int size = screen.arraySize();
+  if (jdata == NULL) {
+    jdata = env->NewByteArray(size);
+  } else {
+    if (env->GetArrayLength(jdata) != size) {
+      return 2;
+    }
+  }
+  jbyte *data = env->GetByteArrayElements(jdata, 0);
+  jbyte *screendata = (jbyte *)screen.getArray();
+  for (i = 0; i < size; i++) {
+    data[i] = screendata[i];
+  }
+  env->ReleaseByteArrayElements(jdata, data, 0);
+  return 0;
 }
 
 }
