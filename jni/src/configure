@@ -1,0 +1,248 @@
+#!/bin/bash
+
+VERSION="1.1.1-cuda8.0"
+DEVVERSION="dev-cuda8.0"
+ALE_HOME="/code/ALE"
+
+OS=`uname -a`
+PARLIB=$1
+if [ "$ARCH" = "" ]; then
+    ARCH=`arch`
+fi
+ 
+# standardise the OS and ARCH names
+if [[ "$OS" == Darwin* ]] ; then
+    if [[ "$OS" == *x86_64 ]] ; then
+	    ARCH="x86_64"
+    fi
+    OS="apple"
+elif [[ "$OS" == Linux* ]] ; then
+    OS="linux"
+elif [[ "$OS" == CYGWIN* ]] ; then
+    if [[ "$OS" == *WOW* ]] ; then
+        ARCH="x86_64"
+    fi
+	OS="windows"
+else
+    echo "OS not supported" $OS
+    exit 1
+fi
+
+if [ "$ARCH" = "x86" ] || [ "$ARCH" = "i686" ] || [ "$ARCH" = "i586" ] \
+	|| [ "$ARCH" = "i486" ] || [ "$ARCH" = "i386" ] ; then
+    ARCH="x86"
+    ARCHD="ia32"
+    SUBDIR=""
+    PTYPE=""
+    MBITS="32"
+elif [ "$ARCH" = "amd64" ] || [ "$ARCH" = "x86_64" ] ; then
+    ARCH="x86_64"
+    ARCHD="intel64"
+    SUBDIR="/lp64"
+    PTYPE="_lp64"
+    MBITS="64"
+elif [[ "$ARCH" == armv7* ]] ; then
+    ARCH="arm"
+    ARMARCH="armv7-a"
+    MBITS=32
+elif [ "$ARCH" = "aarch64" ] ; then
+    ARCH="arm"
+    MBITS=32
+    ARMARCH="armv8-a"
+else
+	echo "ARCH not supported"
+	exit 1
+fi
+
+echo "Creating config for $OS $ARCH"
+
+BIDMACH_ROOT="${BASH_SOURCE[0]}"
+if [ ! `uname` = "Darwin" ]; then
+  BIDMACH_ROOT=`readlink -f "${BIDMACH_ROOT}"`
+else 
+  BIDMACH_ROOT=`readlink "${BIDMACH_ROOT}"`
+fi
+BIDMACH_ROOT=`dirname "$BIDMACH_ROOT"`
+BIDMACH_ROOT=`cd "$BIDMACH_ROOT/../..";pwd`
+BIDMACH_ROOT="$( echo ${BIDMACH_ROOT} | sed s+/cygdrive/c+c:+ )" 
+
+if [ "$OS" = "apple" ] ; then
+    if [ "$JAVA_HOME" = "" ]; then
+	JAVA_HOME=`/usr/libexec/java_home`
+    fi
+    CC="gcc"
+    GCC="g++"
+    OBJ="o"
+    OUTFLG="-o "
+    CPPFLAGS="-fPIC -c -O2 -g -DNDEBUG -I$JAVA_HOME/include  -I$JAVA_HOME/include/darwin -I$BIDMACH_ROOT/jni/include -I$ALE_HOME/src"
+    CFLAGS="-openmp -fPIC -c -O2 -g -DNDEBUG -I$JAVA_HOME/include  -I$JAVA_HOME/include/darwin -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
+    LB="ar rc"    
+    LD="gcc -dynamiclib"
+    LDFLAGS="$LDFLAGS"
+    LIBPREPEND="lib"
+    LIBAPPEND="-${OS}-${ARCH}.dylib"
+    LIBALEAPPEND=".dylib"
+    FC="gfortran"
+    FFLAGS="$CFLAGS"
+    LAPACK_INCLUDES=""
+    FORTRAN_LIBS="-lgfortran"
+    if [ "$PARLIB" = "sequential" ] ; then
+	    CPU_LIBS="-L${BIDMACH_ROOT}/lib -L${ALE_HOME} -lale \ 
+            -lpthread -lm  -framework JavaVM"
+    else 
+	    CPU_LIBS="-L${BIDMACH_ROOT}/lib -L${ALE_HOME} -lale \
+            -lpthread -lm  -framework JavaVM"
+    fi
+    LIBDIR="${BIDMACH_ROOT}/lib"
+    INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
+elif [ "$OS" = "linux" ] ; then
+    if [ "$ARCH" = "arm" ] ; then
+	RANDSRC="RAND"
+	if [ "$QSML_ROOT" != "" ]; then
+	    BLAS_INCLUDE="-I$QSML_ROOT/include"
+	    BLAS_LIB="-L$QSML_ROOT/lib -lQSML -lsymphony-cpu"
+	else
+	    if [ "$OPENBLAS_ROOT" != "" ]; then
+		BLAS_INCLUDE="-I$OPENBLAS_ROOT/include"
+		BLAS_LIB="-L$OPENBLAS_ROOT/lib -lopenblas"
+	    else
+		BLAS_INCLUDE="-I/usr/local/include"
+		BLAS_LIB="-L/usr/local/lib -lopenblas"
+	    fi
+	fi
+	if [ "$JAVA_HOME" = "" ]; then
+	    JAVA_HOME="/usr/java/default"
+	fi
+	CC="gcc"
+	GCC="g++"
+	OBJ="o"
+	OUTFLG="-o "
+	CPPFLAGS="-fPIC -std=c++11 -marm -mfloat-abi=hard -march=${ARMARCH} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMACH_ROOT/jni/include -I$ALE_HOME/src ${BLAS_INCLUDE}"
+	CFLAGS="-fPIC -fopenmp -marm -mfloat-abi=hard -march=${ARMARCH} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMACH_ROOT/jni/include ${BLAS_INCLUDE}"
+	LB="ar rc"    
+	GLD="g++ -shared"
+	LD="gcc -shared -z noexecstack"
+	LDFLAGS="$LDFLAGS"
+	LIBPREPEND="lib"
+	LIBAPPEND="-${OS}-${ARCH}.so"
+	LIBAPPENDLIB="-${OS}-${ARCH}.so"
+	LIBALEAPPEND=".so"
+	FC="gfortran"
+	FFLAGS="$CFLAGS"
+	LAPACK_INCLUDES=""
+	FORTRAN_LIBS="-lgfortran"
+	CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib -L${ALE_HOME} ${BLAS_LIB} -lale -ldl -lpthread -lm -lstdc++ -lgomp" 
+	if [ "$ARCH" = "arm" ] ; then
+            CULIB="lib"
+	else
+            CULIB="lib64"
+	fi
+	LIBDIR="${BIDMACH_ROOT}/lib"
+	INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
+else
+	if [ "$JAVA_HOME" = "" ]; then
+	    JAVA_HOME="/usr/java/default"
+	fi
+	CC="gcc"
+	GCC="g++"
+	OBJ="o"
+	OUTFLG="-o "
+	CPPFLAGS="-fPIC -c -O2 -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMACH_ROOT/jni/include -I$ALE_HOME/src" 
+	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
+	LB="ar rc"    
+	GLD="g++ -shared"
+	LD="gcc -shared -z noexecstack"
+	LDFLAGS="$LDFLAGS"
+	LIBPREPEND="lib"
+	LIBAPPEND="-${OS}-${ARCH}.so"
+	LIBALEAPPEND=".so"
+	FC="gfortran"
+	FFLAGS="$CFLAGS"
+	LAPACK_INCLUDES=""
+	FORTRAN_LIBS="-lgfortran"
+	if [ "$PARLIB" = "sequential" ] ; then
+	    CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib -L${ALE_HOME} -lale \
+             -lpthread -lm"
+	else 
+	    CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib -L${ALE_HOME} -lale \
+              -ldl -lpthread -lm"
+	fi
+	if [ "$ARCH" = "x86" ] ; then
+            CULIB="lib"
+	else
+            CULIB="lib64"
+	fi
+	LIBDIR="${BIDMACH_ROOT}/lib"
+	INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
+    fi
+elif [ "$OS" = "windows" ] ; then
+    CC="cl"
+    GCC="cl"
+    NVCC="nvcc"
+    OBJ="obj"
+    OUTFLG="/OUT:"
+    CFLAGS="/openmp /c /MT /DNDEBUG /O2 /EHsc $CFLAGS"    # static linking
+    CPPFLAGS="/c /MT /DNDEBUG /O2 /EHsc $CFLAGS"    # static linking
+    LB="lib"    
+    LD="link"
+    GLD="link"
+    if [ "$ARCH" = "x86" ] ; then
+        WINARCH=x86
+        PTYPE="_c"
+    else
+        WINARCH=amd64
+        PTYPE="_lp64"
+    fi
+    LDFLAGS="/DLL /MACHINE:${WINARCH} $LDFLAGS"
+    LIBPREPEND=""
+    LIBAPPEND="-${OS}-${ARCH}.dll"
+    LIBALEAPPEND=".dll"
+    FC="ifort"
+    FFLAGS="-c $FFLAGS"
+    LAPACK_INCLUDES=""
+    FORTRAN_LIBS=""
+    if [ "$PARLIB" = "sequential" ] ; then
+	    CPU_LIBS="libale.dll"
+    else
+	    CPU_LIBS="libale.dll"
+    fi
+    LIBDIR="${BIDMACH_ROOT}/lib"
+    INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
+    LIB="$BLAS_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$ALE_HOME/lib/${CULIB};${LIBDIR};$LIB"
+    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$BLAS_ROOT/include;${BIDMACH_ROOT}/jni/include;$CUDA_HOME/include;$INCLUDE"
+else
+    echo "OS not supported"
+    exit 1
+fi
+
+echo "OS=$OS" > Makefile.incl
+echo "MARCH=$ARCH" >> Makefile.incl
+echo "VERSION=$VERSION" >> Makefile.incl
+echo "DEVVERSION=$DEVVERSION" >> Makefile.incl
+echo "BIDMACH_ROOT=$BIDMACH_ROOT" >> Makefile.incl
+echo "ALE_ROOT=$ALE_ROOT" >> Makefile.incl
+echo "CC=$CC" >> Makefile.incl
+echo "GCC=$GCC" >> Makefile.incl
+echo "SUBLIB=$SUBLIB" >> Makefile.incl
+echo "OBJ=$OBJ" >> Makefile.incl
+echo "OUTFLG=$OUTFLG" >> Makefile.incl
+echo "CPPFLAGS=$CPPFLAGS" >> Makefile.incl
+echo "CFLAGS=$CFLAGS" >> Makefile.incl
+echo "LB=$LB" >> Makefile.incl
+echo "LD=$LD" >> Makefile.incl
+echo "GLD=$GLD" >> Makefile.incl
+echo "LDFLAGS=$LDFLAGS" >> Makefile.incl
+echo "LIBPREPEND=$LIBPREPEND" >> Makefile.incl
+echo "LIBAPPEND=$LIBAPPEND" >> Makefile.incl
+echo "LIBALEAPPEND=$LIBALEAPPEND" >> Makefile.incl
+echo "LIBDIR=$LIBDIR" >> Makefile.incl
+echo "LAPACK_INCLUDES=$LAPACK_INCLUDES" >> Makefile.incl
+echo "CPU_LIBS=$CPU_LIBS" >> Makefile.incl
+echo "FORTRAN_LIBS=$FORTRAN_LIBS" >> Makefile.incl
+echo "FC=$FC" >> Makefile.incl
+echo "FFLAGS=$FFLAGS" >> Makefile.incl
+echo "LIB=$LIB" >> Makefile.incl
+echo "INSTALL_DIR=$INSTALL_DIR" >> Makefile.incl
+echo "INCLUDE=$INCLUDE" >> Makefile.incl
+
+
