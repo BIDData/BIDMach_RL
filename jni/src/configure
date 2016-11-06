@@ -201,9 +201,9 @@ elif [ "$OS" = "windows" ] ; then
     LAPACK_INCLUDES=""
     FORTRAN_LIBS=""
     if [ "$PARLIB" = "sequential" ] ; then
-	    CPU_LIBS="libale.dll"
+	    CPU_LIBS=""
     else
-	    CPU_LIBS="libale.dll"
+	    CPU_LIBS=""
     fi
     LIBDIR="${BIDMACH_ROOT}/lib"
     INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"

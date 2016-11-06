@@ -53,7 +53,10 @@ public final class ALE {
 
     private static native int [] getScreenDims(ALE me);
 
-    private static native int getScreenData(ALE me, byte [] data);
+    private static native int getScreenSize(ALE me);
+
+    private static native byte [] getScreenData(ALE me, byte [] data);
+
 
     public int getInt(String str) {return getInt(this, str);}
 
@@ -85,7 +88,9 @@ public final class ALE {
 
     public int [] getScreenDims() {return getScreenDims(this);}
 
-    public int getScreenData(byte [] data) {return getScreenData(this, data);}
+    public int getScreenSize() {return getScreenSize(this);}
+
+    public byte [] getScreenData(byte [] data) {return getScreenData(this, data);}
 
     
 }
