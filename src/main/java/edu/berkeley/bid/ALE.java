@@ -3,7 +3,6 @@ package edu.berkeley.bid;
 public final class ALE {
 
     static {
-	LibUtils.loadLib("ale", false);
 	LibUtils.loadLibrary("bidmachale", false);
     }
 

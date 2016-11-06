@@ -2,7 +2,7 @@ include Makefile.incl
 
 CUDA_OBJS=
 
-CPU_OBJS=BIDMach_ALE.$(OBJ)
+CPU_OBJS=BIDMach_ALE.$(OBJ) $(ALE_HOME)/libale.a
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
@@ -28,7 +28,6 @@ installcpulib: $(INSTALLDIR)/$(LIBPREPEND)bidmachale$(LIBAPPEND)
 $(INSTALLDIR)/$(LIBPREPEND)bidmachale$(LIBAPPEND): $(LIBPREPEND)bidmachale$(LIBAPPEND)
 	mkdir -p $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmachale$(LIBAPPEND) $(INSTALL_DIR)
-	cp $(ALE_HOME)/libale$(LIBALEAPPEND)  $(INSTALL_DIR)
 
 jars: cpujar
 
@@ -38,8 +37,6 @@ $(BIDMACH_ROOT)/target/BIDMachRL-$(VERSION)-cpu-$(OS)-$(MARCH).jar: $(LIBPREPEND
 	cp $(LIBPREPEND)bidmachale$(LIBAPPEND) $(LIBDIR)
 	jar cf $(BIDMACH_ROOT)/target/BIDMachRL-$(VERSION)-cpu-$(OS)-$(MARCH).jar \
 	-C $(BIDMACH_ROOT) lib/$(LIBPREPEND)bidmachale$(LIBAPPEND)
-	jar uf $(BIDMACH_ROOT)/target/BIDMachRL-$(VERSION)-cpu-$(OS)-$(MARCH).jar \
-	-C $(BIDMACH_ROOT) lib/libale$(LIBALEAPPEND)
 	rm $(LIBDIR)/$(LIBPREPEND)bidmachale$(LIBAPPEND)
 
 clean:

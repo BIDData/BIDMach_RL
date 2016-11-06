@@ -2,7 +2,10 @@
 
 VERSION="1.1.1-cuda8.0"
 DEVVERSION="dev-cuda8.0"
-ALE_HOME="/code/ALE"
+
+if [ "$ALE_HOME" = "" ]; then
+    ALE_HOME="/code/ALE"
+fi
 
 OS=`uname -a`
 PARLIB=$1
@@ -81,17 +84,16 @@ if [ "$OS" = "apple" ] ; then
     LDFLAGS="$LDFLAGS"
     LIBPREPEND="lib"
     LIBAPPEND="-${OS}-${ARCH}.dylib"
-    LIBALEAPPEND=".dylib"
     FC="gfortran"
     FFLAGS="$CFLAGS"
     LAPACK_INCLUDES=""
     FORTRAN_LIBS="-lgfortran"
     if [ "$PARLIB" = "sequential" ] ; then
-	    CPU_LIBS="-L${BIDMACH_ROOT}/lib -L${ALE_HOME} -lale \ 
-            -lpthread -lm  -framework JavaVM"
+	    CPU_LIBS="-L${BIDMACH_ROOT}/lib \ 
+            -lpthread -lm -lz -lstdc++ -framework JavaVM"
     else 
-	    CPU_LIBS="-L${BIDMACH_ROOT}/lib -L${ALE_HOME} -lale \
-            -lpthread -lm  -framework JavaVM"
+	    CPU_LIBS="-L${BIDMACH_ROOT}/lib \
+            -lpthread -lm -lz -lstdc++ -framework JavaVM"
     fi
     LIBDIR="${BIDMACH_ROOT}/lib"
     INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
@@ -126,12 +128,11 @@ elif [ "$OS" = "linux" ] ; then
 	LIBPREPEND="lib"
 	LIBAPPEND="-${OS}-${ARCH}.so"
 	LIBAPPENDLIB="-${OS}-${ARCH}.so"
-	LIBALEAPPEND=".so"
 	FC="gfortran"
 	FFLAGS="$CFLAGS"
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
-	CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib -L${ALE_HOME} ${BLAS_LIB} -lale -ldl -lpthread -lm -lstdc++ -lgomp" 
+	CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib ${BLAS_LIB} -ldl -lpthread -lm -lstdc++ -lgomp" 
 	if [ "$ARCH" = "arm" ] ; then
             CULIB="lib"
 	else
@@ -155,16 +156,15 @@ else
 	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"
 	LIBAPPEND="-${OS}-${ARCH}.so"
-	LIBALEAPPEND=".so"
 	FC="gfortran"
 	FFLAGS="$CFLAGS"
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
 	if [ "$PARLIB" = "sequential" ] ; then
-	    CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib -L${ALE_HOME} -lale \
+	    CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib \
              -lpthread -lm"
 	else 
-	    CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib -L${ALE_HOME} -lale \
+	    CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib \
               -ldl -lpthread -lm"
 	fi
 	if [ "$ARCH" = "x86" ] ; then
@@ -196,7 +196,6 @@ elif [ "$OS" = "windows" ] ; then
     LDFLAGS="/DLL /MACHINE:${WINARCH} $LDFLAGS"
     LIBPREPEND=""
     LIBAPPEND="-${OS}-${ARCH}.dll"
-    LIBALEAPPEND=".dll"
     FC="ifort"
     FFLAGS="-c $FFLAGS"
     LAPACK_INCLUDES=""
@@ -208,7 +207,7 @@ elif [ "$OS" = "windows" ] ; then
     fi
     LIBDIR="${BIDMACH_ROOT}/lib"
     INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
-    LIB="$BLAS_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$ALE_HOME/lib/${CULIB};${LIBDIR};$LIB"
+    LIB="$BLAS_ROOT/lib/${ARCHD};$JAVA_HOME/lib;${CULIB};${LIBDIR};$LIB"
     INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$BLAS_ROOT/include;${BIDMACH_ROOT}/jni/include;$CUDA_HOME/include;$INCLUDE"
 else
     echo "OS not supported"
