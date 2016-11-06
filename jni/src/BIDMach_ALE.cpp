@@ -37,7 +37,7 @@ static void setALE(JNIEnv *env, jclass clazz, jobject jale, ALEInterface *alep)
 
 extern "C" {
 
-JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_createALE
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_newALE
 (JNIEnv *env, jclass clazz, jobject jale)
 {
   ALEInterface * alep = new ALEInterface();
@@ -47,7 +47,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_createALE
   return status;
 }
 
-JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_delALE
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_deleteALE
 (JNIEnv *env, jclass clazz, jobject jale)
 {
   ALEInterface *alep = getALE(env, clazz, jale);
@@ -163,6 +163,25 @@ JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getLegalActionSet
   int i, size;
   ALEInterface *alep = getALE(env, clazz, jale);
   std::vector<Action> legal_actions = alep->getLegalActionSet();
+  size = legal_actions.size();
+  jintArray result = env->NewIntArray(size);
+  if (result == NULL) {
+    return NULL; 
+  }
+  jint *body = env->GetIntArrayElements(result, 0);
+  for (i = 0; i < size; i++) {
+    body[i] = legal_actions[i];
+  }
+  env->ReleaseIntArrayElements(result, body, 0);
+  return result;
+}
+
+JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getMinimalActionSet
+(JNIEnv *env, jclass clazz, jobject jale)
+{
+  int i, size;
+  ALEInterface *alep = getALE(env, clazz, jale);
+  std::vector<Action> legal_actions = alep->getMinimalActionSet();
   size = legal_actions.size();
   jintArray result = env->NewIntArray(size);
   if (result == NULL) {

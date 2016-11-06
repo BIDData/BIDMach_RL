@@ -28,7 +28,7 @@ installcpulib: $(INSTALLDIR)/$(LIBPREPEND)bidmachale$(LIBAPPEND)
 $(INSTALLDIR)/$(LIBPREPEND)bidmachale$(LIBAPPEND): $(LIBPREPEND)bidmachale$(LIBAPPEND)
 	mkdir -p $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmachale$(LIBAPPEND) $(INSTALL_DIR)
-	cp $(LIBDIR)/libale$(LIBALEAPPEND)  $(INSTALL_DIR)
+	cp $(ALE_HOME)/libale$(LIBALEAPPEND)  $(INSTALL_DIR)
 
 jars: cpujar
 
