@@ -11,6 +11,7 @@ import BIDMach.datasinks.{DataSink,MatSink}
 import BIDMach.mixins.{CosineSim,Perplexity,Top,L1Regularizer,L2Regularizer}
 import BIDMach.updaters.{ADAGrad,Batch,BatchNorm,Grad,IncMult,IncNorm,Telescoping}
 import BIDMach.causal.{IPTW}
+import BIDMach.rl.ALE
 
 Mat.checkMKL(false)
 Mat.checkCUDA

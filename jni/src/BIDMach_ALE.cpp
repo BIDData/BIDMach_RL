@@ -19,16 +19,18 @@ static void* long2void(jlong l) {
   return v.p;
 }
 
-static ALEInterface * getALE(JNIEnv *env, jclass clazz, jobject jale)
+static ALEInterface * getALE(JNIEnv *env, jobject jale)
 {
+  jclass clazz = env->GetObjectClass(jale);
   jfieldID handle_id = env->GetFieldID(clazz, "handle", "J");
   jlong handle = env->GetLongField(jale, handle_id);
   ALEInterface *alep = (ALEInterface *)long2void(handle);
   return alep;
 }
 
-static void setALE(JNIEnv *env, jclass clazz, jobject jale, ALEInterface *alep)
+static void setALE(JNIEnv *env, jobject jale, ALEInterface *alep)
 {
+  jclass clazz = env->GetObjectClass(jale);
   jfieldID handle_id = env->GetFieldID(clazz, "handle", "J");
   jlong handle = void2long(alep);
   env->SetLongField(jale, handle_id, handle);
@@ -38,21 +40,21 @@ static void setALE(JNIEnv *env, jclass clazz, jobject jale, ALEInterface *alep)
 extern "C" {
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_newALE
-(JNIEnv *env, jclass clazz, jobject jale)
+(JNIEnv *env, jobject jale)
 {
   ALEInterface * alep = new ALEInterface();
   int status = (alep != NULL);
-  setALE(env, clazz, jale, alep);
+  setALE(env, jale, alep);
   
   return status;
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_deleteALE
-(JNIEnv *env, jclass clazz, jobject jale)
+(JNIEnv *env, jobject jale)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   delete [] alep;
-  setALE(env, clazz, jale, NULL);
+  setALE(env, jale, NULL);
   
   return 0;
 }
@@ -60,7 +62,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_deleteALE
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_getInt
 (JNIEnv *env, jclass clazz, jobject jale, jstring jvname)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   char *vname = (char *)(env->GetStringUTFChars(jvname, 0));
   jint retval = alep -> getInt(vname);
   env -> ReleaseStringUTFChars(jvname, vname);
@@ -68,9 +70,9 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_getInt
 }
 
 JNIEXPORT jfloat JNICALL Java_edu_berkeley_bid_ALE_getFloat
-(JNIEnv *env, jclass clazz, jobject jale, jstring jvname)
+(JNIEnv *env, jobject jale, jstring jvname)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   char *vname = (char *)(env->GetStringUTFChars(jvname, 0));
   jfloat retval = alep -> getFloat(vname);
   env -> ReleaseStringUTFChars(jvname, vname);
@@ -78,9 +80,9 @@ JNIEXPORT jfloat JNICALL Java_edu_berkeley_bid_ALE_getFloat
 }
 
 JNIEXPORT jboolean JNICALL Java_edu_berkeley_bid_ALE_getBoolean
-(JNIEnv *env, jclass clazz, jobject jale, jstring jvname)
+(JNIEnv *env, jobject jale, jstring jvname)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   char *vname = (char *)(env->GetStringUTFChars(jvname, 0));
   jboolean retval = alep -> getBool(vname);
   env -> ReleaseStringUTFChars(jvname, vname);
@@ -88,9 +90,9 @@ JNIEXPORT jboolean JNICALL Java_edu_berkeley_bid_ALE_getBoolean
 }
 
 JNIEXPORT jstring JNICALL Java_edu_berkeley_bid_ALE_getString
-(JNIEnv *env, jclass clazz, jobject jale, jstring jvname)
+(JNIEnv *env, jobject jale, jstring jvname)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   char *vname = (char *)(env->GetStringUTFChars(jvname, 0));
   std::string str = alep -> getString(vname);
   jstring jstr = env->NewStringUTF(str.c_str());
@@ -100,9 +102,9 @@ JNIEXPORT jstring JNICALL Java_edu_berkeley_bid_ALE_getString
 
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setInt
-(JNIEnv *env, jclass clazz, jobject jale, jstring jvname, jint ival)
+(JNIEnv *env, jobject jale, jstring jvname, jint ival)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   int status = (alep != NULL);
   char *vname = (char *)(env->GetStringUTFChars(jvname, 0));
   alep -> setInt(vname, ival);
@@ -112,9 +114,9 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setInt
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setFloat
 
-(JNIEnv *env, jclass clazz, jobject jale, jstring jvname, jfloat fval)
+(JNIEnv *env, jobject jale, jstring jvname, jfloat fval)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   int status = (alep != NULL);
   char *vname = (char *)(env->GetStringUTFChars(jvname, 0));
   alep -> setFloat(vname, fval);
@@ -123,9 +125,9 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setFloat
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setBoolean
-(JNIEnv *env, jclass clazz, jobject jale, jstring jvname, jboolean bval)
+(JNIEnv *env, jobject jale, jstring jvname, jboolean bval)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   int status = (alep != NULL);
   char *vname = (char *)(env->GetStringUTFChars(jvname, 0));
   alep -> setBool(vname, bval);
@@ -134,9 +136,9 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setBoolean
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setString
-(JNIEnv *env, jclass clazz, jobject jale, jstring jvname, jstring jval)
+(JNIEnv *env, jobject jale, jstring jvname, jstring jval)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   int status = (alep != NULL);
   char *vname = (char *)(env->GetStringUTFChars(jvname, 0));
   char *vval = (char *)(env->GetStringUTFChars(jval, 0));
@@ -147,9 +149,9 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_setString
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_loadROM
-(JNIEnv *env, jclass clazz, jobject jale, jstring jromname)
+(JNIEnv *env, jobject jale, jstring jromname)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   int status = (alep != NULL);
   char *romname = (char *)(env->GetStringUTFChars(jromname, 0));
   alep -> loadROM(romname);
@@ -158,10 +160,10 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_loadROM
 }
 
 JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getLegalActionSet
-(JNIEnv *env, jclass clazz, jobject jale)
+(JNIEnv *env, jobject jale)
 {
   int i, size;
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   std::vector<Action> legal_actions = alep->getLegalActionSet();
   size = legal_actions.size();
   jintArray result = env->NewIntArray(size);
@@ -177,10 +179,10 @@ JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getLegalActionSet
 }
 
 JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getMinimalActionSet
-(JNIEnv *env, jclass clazz, jobject jale)
+(JNIEnv *env, jobject jale)
 {
   int i, size;
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   std::vector<Action> legal_actions = alep->getMinimalActionSet();
   size = legal_actions.size();
   jintArray result = env->NewIntArray(size);
@@ -196,34 +198,34 @@ JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getMinimalActionSet
 }
 
 JNIEXPORT jfloat JNICALL Java_edu_berkeley_bid_ALE_act
-(JNIEnv *env, jclass clazz, jobject jale, jint action)
+(JNIEnv *env, jobject jale, jint action)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   float reward = alep->act((Action)action);
   return reward;
 }
 
 JNIEXPORT jboolean JNICALL Java_edu_berkeley_bid_ALE_game_1over
-(JNIEnv *env, jclass clazz, jobject jale)
+(JNIEnv *env, jobject jale)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   jboolean done = alep->game_over();  
   return done;
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_reset_1game
-(JNIEnv *env, jclass clazz, jobject jale)
+(JNIEnv *env, jobject jale)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   int status = (alep != NULL);
   alep->reset_game();
   return status;
 }
 
 JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getScreenDims
-(JNIEnv *env, jclass clazz, jobject jale)
+(JNIEnv *env, jobject jale)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   jintArray result = env->NewIntArray(3);
   if (result == NULL) {
     return NULL; 
@@ -238,9 +240,9 @@ JNIEXPORT jintArray JNICALL Java_edu_berkeley_bid_ALE_getScreenDims
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_getScreenSize
-(JNIEnv *env, jclass clazz, jobject jale)
+(JNIEnv *env, jobject jale)
 {
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   if (alep == NULL) {
     return -1;
   }
@@ -250,10 +252,10 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_getScreenSize
 }
 
 JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenData
-(JNIEnv *env, jclass clazz, jobject jale, jbyteArray jdata)
+(JNIEnv *env, jobject jale, jbyteArray jdata)
 {
   int i;
-  ALEInterface *alep = getALE(env, clazz, jale);
+  ALEInterface *alep = getALE(env, jale);
   if (alep == NULL) {
     return NULL;
   }
@@ -276,6 +278,64 @@ JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenData
   for (i = 0; i < size; i++) {
     data[i] = screendata[i];
   }
+  env->ReleaseByteArrayElements(jdata, data, 0);
+  return jdata;
+}
+
+JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenRGB
+(JNIEnv *env, jobject jale, jbyteArray jdata)
+{
+  int i;
+  ALEInterface *alep = getALE(env, jale);
+  if (alep == NULL) {
+    return NULL;
+  }
+  const ALEScreen& screen= alep->getScreen();
+  int size = screen.arraySize();
+  if (jdata == NULL) {
+    jdata = env->NewByteArray(size*3);
+  }
+  if (jdata == NULL) {
+    return NULL; 
+  }
+  jbyte *data = env->GetByteArrayElements(jdata, 0);
+  if (data == NULL) {
+    return NULL;
+  }
+  if (env->GetArrayLength(jdata) != 3*size) {
+    return NULL;
+  }
+  jbyte *screendata = (jbyte *)screen.getArray();
+  alep->theOSystem->colourPalette().applyPaletteRGB((unsigned char *)data, (unsigned char *)screendata, size);
+  env->ReleaseByteArrayElements(jdata, data, 0);
+  return jdata;
+}
+
+JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenGrayscale
+(JNIEnv *env, jobject jale, jbyteArray jdata)
+{
+  int i;
+  ALEInterface *alep = getALE(env, jale);
+  if (alep == NULL) {
+    return NULL;
+  }
+  const ALEScreen& screen= alep->getScreen();
+  int size = screen.arraySize();
+  if (jdata == NULL) {
+    jdata = env->NewByteArray(size);
+  }
+  if (jdata == NULL) {
+    return NULL; 
+  }
+  jbyte *data = env->GetByteArrayElements(jdata, 0);
+  if (data == NULL) {
+    return NULL;
+  }
+  if (env->GetArrayLength(jdata) != size) {
+    return NULL;
+  }
+  jbyte *screendata = (jbyte *)screen.getArray();
+  alep->theOSystem->colourPalette().applyPaletteGrayscale((unsigned char *)data, (unsigned char *)screendata, size);
   env->ReleaseByteArrayElements(jdata, data, 0);
   return jdata;
 }

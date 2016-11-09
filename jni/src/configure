@@ -123,7 +123,7 @@ elif [ "$OS" = "linux" ] ; then
 	CFLAGS="-fPIC -fopenmp -marm -mfloat-abi=hard -march=${ARMARCH} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMACH_ROOT/jni/include ${BLAS_INCLUDE}"
 	LB="ar rc"    
 	GLD="g++ -shared"
-	LD="gcc -shared -z noexecstack"
+	LD="g++ -shared -z noexecstack"
 	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"
 	LIBAPPEND="-${OS}-${ARCH}.so"
@@ -132,7 +132,7 @@ elif [ "$OS" = "linux" ] ; then
 	FFLAGS="$CFLAGS"
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
-	CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib ${BLAS_LIB} -ldl -lpthread -lm -lstdc++ -lgomp" 
+	CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib ${BLAS_LIB} -lm -lstdc++ -lz" 
 	if [ "$ARCH" = "arm" ] ; then
             CULIB="lib"
 	else
@@ -165,7 +165,7 @@ else
              -lpthread -lm"
 	else 
 	    CPU_LIBS="-L$JAVA_HOME/lib -L${BIDMACH_ROOT}/lib \
-              -ldl -lpthread -lm"
+              -ldl -lstdc++ -lm -lz"
 	fi
 	if [ "$ARCH" = "x86" ] ; then
             CULIB="lib"
