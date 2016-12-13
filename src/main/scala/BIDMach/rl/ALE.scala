@@ -37,6 +37,9 @@ class ALE extends edu.berkeley.bid.ALE {
   		reward += act(action);
   		i += 1;
   	} 
+  	if (dims == null) {
+			dims = getScreenDims
+		}
  		val width = dims(0);
 		val height = dims(1);
 		val len = width*height; 	
