@@ -255,7 +255,21 @@
 	</configuration>
       </plugin>  
     </plugins>
-  </build>
+    <resources>
+      <resource>
+	<directory>lib/</directory>
+	<excludes>
+	  <exclude>*</exclude>
+	</excludes>
+      </resource>
+      <resource>
+	<directory>cbin/</directory>
+	<excludes>
+	  <exclude>*</exclude>
+	</excludes>
+      </resource>
+    </resources>	
+  </build>	
   <distributionManagement>
     <repository>
       <id>bintray-biddata-BIDData</id>
