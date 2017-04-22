@@ -52,6 +52,7 @@ if [ "$OSS" = "windows" ]; then
 fi
 
 BIDMACH_LIBS="${BIDMACH_ROOT}/target/BIDMachRL-${BIDMAT_VERSION}.jar;\
+${LIBDIR}/BIDMachRL-${BIDMAT_VERSION}-cpu-${OSS}-${ARCH}.jar;\
 ${LIBDIR}/BIDMach-${BIDMAT_VERSION}.jar;\
 ${LIBDIR}/BIDMach-${BIDMAT_VERSION}-cpu-${OSS}-${ARCH}.jar;\
 ${LIBDIR}/BIDMach-${BIDMAT_VERSION}-gpu-${OSS}-${ARCH}.jar;\
