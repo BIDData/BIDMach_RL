@@ -47,6 +47,25 @@ class ALE extends edu.berkeley.bid.ALE {
   	val done = game_over();
   	(out, reward, done)
   };
+
+  def step2(action:Int):(Array[Byte], Float, Boolean) = {
+  	val nsteps = frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
+  	var reward = 0f;
+  	var i = 0;
+  	while (i < nsteps) {
+  		reward += act(action);
+  		i += 1;
+  	} 
+  	if (dims == null) {
+			dims = getScreenDims
+		}
+ 		val width = dims(0);
+		val height = dims(1);
+		val len = width*height; 	
+  	val out = getScreenData(null);
+  	val done = game_over();
+  	(out, reward, done)
+  };
   
   def step(action:Int):(FMat, Float, Boolean) = step(action, null);
 
