@@ -3,19 +3,19 @@ import jcuda.jcudnn.cudnnTensorFormat._
 import jcuda.jcudnn.cudnnConvolutionMode._
 import java.util.Random
 
-val nsteps = 20000001                    // Number of steps to run (game actions per environment)
-val npar = 4                             // Number of parallel environments
+val nsteps = 20001                        // Number of steps to run (game actions per environment)
+val npar = 16                             // Number of parallel environments
 val target_window = 50                   // Interval to update target estimator from q-estimator
 val discount_factor = 0.99f              // Reward discount factor
-val printsteps = 10000                   // Number of steps between printouts
+val printsteps = 1000                   // Number of steps between printouts
 val render = false                       // Whether to render an environment while training
 
-val epsilon_start = 0.5f                 // Parameters for epsilon-greedy policy: initial epsilon
+val epsilon_start = 0.3f                 // Parameters for epsilon-greedy policy: initial epsilon
 val epsilon_end = 0.1f                   // Final epsilon
 val neps = (0.9*nsteps).toInt            // Number of steps to decay epsilon
 
-//val learning_rate = 5e-4f
-val learning_rate = 3e-6f                // Initial learning rate
+val learning_rate = 1e-4f
+    //val learning_rate = 3e-6f                // Initial learning rate
 val lr_end = learning_rate               // Final learning rate
 val nlr = neps                           // Steps to decay learning rate
 val gsq_decay = 0.99f                    // Decay factor for MSProp
@@ -98,7 +98,8 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
     
     val opts = new Myopts;  
     opts.vexp = 1f;
-    opts.texp = 1f;
+    opts.texp = 0f;
+    opts.waitsteps = -1;
     opts.vel_decay = vel_decay;
     opts.gsq_decay = gsq_decay;
     opts.tensorFormat = tformat;
@@ -114,10 +115,10 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
     val conv2 = conv(relu1)(w=3,h=3,nch=nhidden2,stride=2,pad=1,convType=convt);
     val relu2 = relu(conv2);
 
-    val fc3 =   linear(relu2)(outdim=nhidden3,initv=3e-2f);
+    val fc3 =   linear(relu2)(outdim=nhidden3,initv=2e-2f);
     val relu3 = relu(fc3);
     
-    val fc4 =   linear(relu3)(outdim=nactions,initv=3e-2f); 
+    val fc4 =   linear(relu3)(outdim=nactions,initv=5e-2f); 
     val npredict = 9;                                       // Number of layers for action prediction. 
     
     val sel =   fc4(acts);
@@ -172,7 +173,7 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
 	val fstates = formatStates(states);
         checkinit(fstates);
         for (i <- 0 until npredict) net.layers(i).forward;
-        net.layers(npredict-1).output.asInstanceOf[FMat];
+        FMat(net.layers(npredict-1).output);
     }
 
 /** Run the model all the way forward to the squared loss output layer.
@@ -192,7 +193,12 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
     
     def gradient(states:FMat, actions:IMat, rewards:FMat):Float = {
 	val fstates = formatStates(states);
-        net.layers(net.layers.length-1).target = net.convertMat(rewards);
+	val nlast = net.layers.length-1;
+	if (net.layers(nlast).target.asInstanceOf[AnyRef] == null) {
+	    net.layers(nlast).target = net.convertMat(rewards);
+	} else {
+	    net.layers(nlast).target <-- rewards;
+	}
         val dout = DMat(forward(fstates, actions));
         net.backward(0, 0);
         sqrt((dout dotr dout)/dout.length).fv                             // return the RMS residual error. 
@@ -203,6 +209,8 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
     def msprop(learning_rate:Float) = {                
         opts.lrate = learning_rate;
         adagrad.update(0,0,0);
+	net.cleargrad;
+	
     }
 };
 
@@ -213,7 +221,7 @@ def policy(estimator:Estimator, state:FMat, epsilon:Float):FMat = {
 //    """ Take an estimator and state and predict the best action.
 //    For each input state, return a vector of action probabilities according to an epsilon-greedy policy"""
     A.set(epsilon / nactions);
-    val q_values = FMat(estimator.predict(state))
+    val q_values = estimator.predict(state);
     val (_,best_action) = maxi2(q_values)
     A(best_action + aselector) = A(best_action + aselector) + (1f - epsilon)
     A
@@ -299,7 +307,7 @@ var total_reward = 0f
 total_epochs = 0
 var last_epochs = 0
 val new_state = state.copy
-Mat.useCache = true;
+Mat.useGPUcache = true;
 
 val times = zeros(1,8)
 val dtimes = zeros(1,7)
@@ -356,5 +364,7 @@ for (istep <- 0 until nsteps) {
         block_loss = 0f;
     }
     state <-- new_state;
+    //    Mat.debugMem = true;
+    //    Mat.debugMemThreshold = 0;
 }
 dtimes
