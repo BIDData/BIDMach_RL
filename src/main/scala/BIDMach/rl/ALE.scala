@@ -48,6 +48,8 @@ class ALE extends edu.berkeley.bid.ALE {
   	(out, reward, done)
   };
 
+  def step(action:Int):(FMat, Float, Boolean) = step(action, null);
+
   def step2(action:Int):(Array[Byte], Float, Boolean) = {
   	val nsteps = frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
   	var reward = 0f;
@@ -67,8 +69,6 @@ class ALE extends edu.berkeley.bid.ALE {
   	(out, reward, done)
   };
   
-  def step(action:Int):(FMat, Float, Boolean) = step(action, null);
-
   def reset(out0:FMat):FMat = {
 		reset_game();
 		copyObs(out0);
