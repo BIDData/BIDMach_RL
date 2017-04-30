@@ -17,7 +17,7 @@ val neps = (0.9*nsteps).toInt            // Number of steps to decay epsilon
 
 val learning_rate = 1e-4f
 val learning_rate = 3e-6f                // Initial learning rate
-    //val learning_rate = 1e-7f                // Initial learning rate
+val learning_rate = 3e-7f                // Initial learning rate
 val lr_end = learning_rate               // Final learning rate
 val nlr = neps                           // Steps to decay learning rate
 val gsq_decay = 0.99f                    // Decay factor for MSProp
