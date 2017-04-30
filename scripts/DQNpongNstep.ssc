@@ -1,10 +1,10 @@
-:silent
+:silent 
 import BIDMach.rl.ALE;
 import jcuda.jcudnn.cudnnTensorFormat._
 import jcuda.jcudnn.cudnnConvolutionMode._
 import java.util.Random
 
-val nsteps = 2000001                     // Number of steps to run (game actions per environment)
+val nsteps = 200001                     // Number of steps to run (game actions per environment)
 val npar = 16                            // Number of parallel environments
 val target_window = 50                   // Interval to update target estimator from q-estimator
 val discount_factor = 0.99f              // Reward discount factor
@@ -15,14 +15,16 @@ val epsilon_start = 0.3f                 // Parameters for epsilon-greedy policy
 val epsilon_end = 0.1f                   // Final epsilon
 val neps = (0.9*nsteps).toInt            // Number of steps to decay epsilon
 
-val learning_rate = 1e-5f
+val learning_rate = 1e-4f
 val learning_rate = 3e-6f                // Initial learning rate
+    //val learning_rate = 1e-7f                // Initial learning rate
 val lr_end = learning_rate               // Final learning rate
 val nlr = neps                           // Steps to decay learning rate
 val gsq_decay = 0.99f                    // Decay factor for MSProp
-val vel_decay = 0.9f                     // Momentum decay
+val vel_decay = 0.0f                     // Momentum decay
 val gclip = 1f                           // gradient clipping
 val rmsevery = 5                         // apply gradient after skipping this many steps
+val baseline_decay = 0.9999f
 
 val nhidden = 16                         // Number of hidden layers for estimators
 val nhidden2 = 32
@@ -30,6 +32,7 @@ val nhidden3 = 256
 
 val init_moves = 10000                   // Upper bound on random number of moves to take initially
 val nwindow = 4                          // Sensing window = last n images in a state
+val history_size = 4e9f                  // History size in Bytes
 
 // The epsilon and learning rate decay schedules
 // val epsilons = np.linspace(epsilon_start, epsilon_end, neps)
@@ -46,6 +49,8 @@ val nactions= VALID_ACTIONS.length
 val height = 80
 val width = 80
 
+val max_history = (history_size/(height*width*npar*4)).toInt
+
 def preprocess(img:FMat, out:FMat):FMat = {
 //  Preprocess Pong game frames into vectors.
 //  Input:
@@ -59,13 +64,14 @@ def preprocess(img:FMat, out:FMat):FMat = {
         while (j < width) {
 	    val indx = 3*(j*2 + 160 * (i*2 + 35))
             val y = (img(indx) + img(indx+1) + img(indx+2)).toFloat
-            res.data(j + width*i) = y / 765f - 0.30458f;           // Remove the mode
+            res.data(j + width*i) = y / 765f;
             j += 1;
         }
         i += 1;
     }
     res
 }
+
 
 def preprocess2(I:Array[Byte], out:FMat):FMat = {
 //  Preprocess Pong game frames into vectors.
@@ -86,6 +92,7 @@ def preprocess2(I:Array[Byte], out:FMat):FMat = {
     }
     res
 }
+
 
 val convt = CUDNN_CROSS_CORRELATION;
 val tformat = Net.TensorNCHW;
@@ -211,8 +218,8 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
     val A = zeros(nactions, npar);
 
     def policy(state:FMat, epsilon:Float):FMat = {
-//    Take an estimator and state and predict the best action.
-//    For each input state, return a vector of action probabilities according to an epsilon-greedy policy
+//    """ Take an estimator and state and predict the best action.
+//    For each input state, return a vector of action probabilities according to an epsilon-greedy policy"""
 	A.set(epsilon / nactions);
 	val q_values = predict(state);
 	val (_,best_action) = maxi2(q_values)
@@ -221,7 +228,7 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
     }
 
     def update_estimator(to_estimator:Estimator, window:Int, istep:Int) = {
-//    every <window> steps, Copy model state from from_estimator into to_estimator
+//    """ every <window> steps, Copy model state from from_estimator into to_estimator"""
 	if (istep % window == 0) {
 	    for (k  <- 0 until net.modelmats.length) {
 		to_estimator.net.modelmats(k) <-- net.modelmats(k);
@@ -240,6 +247,7 @@ val img0 = zeros(width\height\1\1);
 var total_time=0f;
 var total_steps=0;
 var total_epochs = 0;
+var tbaseline = 0f;
 
 val rn = new Random
 
@@ -252,11 +260,11 @@ for (i <- 0 until npar) {
     val nmoves = rn.nextInt(init_moves - nwindow) + nwindow
     for (j <- 0 until nmoves) {   
         val action = VALID_ACTIONS(rn.nextInt(nactions))
-        val (obs, reward, done) = envs(i).step(action)
+        val (obs, reward, done) = envs(i).step2(action)
         total_steps += 1;
         if (nmoves - j <= nwindow) {
             val k = nwindow - nmoves + j;
-            state(?,?,k,i) = preprocess(obs, img0)
+            state(?,?,k,i) = preprocess2(obs, img0)
         }
         if (done) {
             envs(i).reset() 
@@ -272,11 +280,9 @@ println("%d steps, %d epochs in %5.4f seconds at %5.4f msecs/step" format(
 
 // Create estimators
 val q_estimator = new Estimator(nhidden, nhidden2, nhidden3, nactions);
-val target_estimator = new Estimator(nhidden, nhidden2, nhidden3, nactions);
 
 // Initialize them by making predictions
 q_estimator.predict(state);
-target_estimator.predict(state);
 
 def random_choices(probs:FMat):IMat = {
     val result = izeros(1, probs.ncols);
@@ -297,68 +303,122 @@ def random_choices(probs:FMat):IMat = {
 
 tic
 var block_loss = 0f
+var block_count = 0;
 var block_reward = 0f
 var total_reward = 0f
 total_epochs = 0
 var last_epochs = 0
 val new_state = state.copy
+val history = zeros(width\height\max_history\npar);
+val action_history = izeros(max_history,npar);
+val history_ptr = izeros(1,npar);
 Mat.useGPUcache = true;
 
-val times = zeros(1,8);
-val dtimes = zeros(1,7);
+val times = zeros(1,6);
+val dtimes = zeros(1,5);
 val rand_actions = int(rand(1, npar) * nactions);
-val (obs0, rewards0, dones0) = ALE.stepAll(envs, VALID_ACTIONS(rand_actions));           // step through parallel envs
+val (obs0, rewards0, dones0) = ALE.stepAll2(envs, VALID_ACTIONS(rand_actions));           // step through parallel envs
 var actions:IMat = null;
 var action_probs:FMat = null;
+val running_rewards = zeros(1, npar);
+
+
+def thread_gradient(ithread:Int, reward:Float):(Float,Int) = {
+    var i = 0;
+    var iblocks = 0;
+    var block_loss = 0f;
+    val targets = zeros(1,npar);
+    targets.set(reward);
+    while (i < history_ptr(ithread) + npar + nwindow) {
+	var j = 0;
+	while (j < npar) {
+	    state(?,?,?,j) = history(?,?,(i+j)->(i+j+nwindow), ithread);
+	    actions(0,j) = action_history(i+j+nwindow-1, ithread);
+	    j += 1;
+	}
+	block_loss += q_estimator.gradient(state, actions, targets);                // compute q-estimator gradient and return the loss
+	iblocks += 1;
+	i += npar;
+    }
+    (block_loss, iblocks);
+}
+
+def showx(state:FMat) = {
+    val st0 = state(?,?,0->3,0->8).transpose(2\0\3\1);
+    st0(?,79,?,?) = 1f;
+    val st = st0.reshapeView(3,80*8,80)*255f;
+    show(st)
+    st;
+}
+
+def showy(state:FMat) = {
+    val st = state.transpose(0\3\1\2).reshapeView(80*npar,80*nwindow)*255f;
+    st;
+}
+
 
 for (istep <- 0 until nsteps) {
 //    if (render): envs[0].render()
     times(0) = toc
     val epsilon = epsilons(math.min(istep, neps-1));                                // get an epsilon for the eps-greedy policy
     val lr = learning_rates(math.min(istep, nlr-1));                                // update the decayed learning rate
-
-    q_estimator.update_estimator(target_estimator, target_window, istep);          // update the target estimator if needed    
+    
+    action_probs = q_estimator.policy(state, epsilon);                              // get the next action probabilities from the policy
     times(1) = toc
-    
-    action_probs = q_estimator.policy(state, epsilon);                 // get the next action probabilities from the policy
-    times(2) = toc
                                                  
-    actions = random_choices(action_probs);                                     // Choose actions using the policy
-    val (obs, rewards, dones) = ALE.stepAll(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0)           // step through parallel envs
-    times(3) = toc
-    
+    actions = random_choices(action_probs);                                         // Choose actions using the policy
+    val (obs, rewards, dones) = ALE.stepAll2(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0)           // step through parallel envs
+    times(2) = toc
+
+    total_epochs += sum(dones).v.toInt;
+    block_reward += sum(rewards).v;
+
+    dones <-- (dones + (rewards != 0f) > 0f);                                       // For Pong only. Finish epoch at any reward
+
     for (i <- 0 until npar) {                                                     
-        val img = preprocess(obs(i), img0);                                               // process the observation
-        new_state(?,?,0->(nwindow-1),i) = state(?,?,1->nwindow,i);              // shift the image stack and add a new image
-	new_state(?,?,nwindow-1,i) = img;         
-    }    
-    total_epochs += sum(dones).v.toInt
-    block_reward += sum(rewards).v  
-    times(4) = toc
-    
-    val q_values_next = target_estimator.predict(new_state);                        // predict the Q values
+        val img = preprocess2(obs(i), img0);                                        // process the observation
+        new_state(?,?,0->(nwindow-1),i) = state(?,?,1->nwindow,i);                  // shift the image stack and add a new image
+	new_state(?,?,nwindow-1,i) = img;      
+	history(?,?,history_ptr(i),i) = img;                                        // Save in history buffer
+	action_history(history_ptr(i)) = actions(i);
+	running_rewards(i) += rewards(i);
+	history_ptr(i) += 1;
+    }
+
+    times(3) = toc;
+    times(4) = toc;
+
+    for (i <- 0 until npar) {
+	if (dones(i) > 0) {
+	    tbaseline = baseline_decay * tbaseline + (1-baseline_decay) * running_rewards(i);
+
+	    val (block_loss0, block_cnt0) = thread_gradient(i, running_rewards(i) - tbaseline);
+	    times(4) = toc;
+	    block_loss += block_loss0;
+	    block_count += block_cnt0;
+	    q_estimator.msprop(lr);                       // apply the gradient update
+	    running_rewards(i) = 0;
+	    history_ptr(i) = 0;
+	} else if (history_ptr(i) > max_history) {
+	    running_rewards(i) = 0;
+	    history_ptr(i) = 0;
+	    envs(i).reset();
+	}
+    }        
+
     times(5) = toc
     
-    dones <-- (dones + (rewards != 0f) > 0f);
-    val targets = rewards+discount_factor*(1f-dones) *@ maxi(q_values_next);        // compute target values
-    block_loss += q_estimator.gradient(state, actions, targets);                    // compute q-estimator gradient and return the loss
-    times(6) = toc
-     
-    if (istep % rmsevery == 0) {
-       q_estimator.msprop(lr);                       // apply the gradient update
-//        print("ds1=%f, ss1=%f, ds2=%f, ss2=%f\n" format(res(0,0), res(1,0), res(0,1), res(1,1)));
-    }
-    times(7) = toc
-    
-    dtimes ~ dtimes + (times(0,1->8) - times(0,0->7))
+    dtimes ~ dtimes + (times(0,1->6) - times(0,0->5))
     val t = toc;
     if (istep % printsteps == 0) {
         total_reward += block_reward;
-        println("step %d, time %2.1f, loss %9.8f, epochs %d, reward/epoch %6.5f, cum reward/epoch %6.5f" format(
-                istep, t, block_loss/printsteps, total_epochs, block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)))
+        println("step %d, time %2.1f, loss %7.6f, B %d, E %d, R/E %6.5f, CR/E %6.5f" format(
+		istep, t, block_loss/math.max(1,block_count),block_count, total_epochs, 
+                block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)))
         last_epochs = total_epochs;
         block_reward = 0f;
         block_loss = 0f;
+	block_count = 0;
     }
     state <-- new_state;
     //    Mat.debugMem = true;
