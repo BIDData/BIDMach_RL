@@ -329,11 +329,11 @@ def thread_gradient(ithread:Int, reward:Float):(Float,Int) = {
     var block_loss = 0f;
     val targets = zeros(1,npar);
     targets.set(reward);
-    while (i < history_ptr(ithread) + npar + nwindow) {
+    while (i < history_ptr(ithread) - npar - nwindow - 1) {
 	var j = 0;
 	while (j < npar) {
 	    state(?,?,?,j) = history(?,?,(i+j)->(i+j+nwindow), ithread);
-	    actions(0,j) = action_history(i+j+nwindow-1, ithread);
+	    actions(0,j) = action_history(i+j+nwindow+1, ithread);
 	    j += 1;
 	}
 	block_loss += q_estimator.gradient(state, actions, targets);                // compute q-estimator gradient and return the loss
@@ -380,7 +380,7 @@ for (istep <- 0 until nsteps) {
         new_state(?,?,0->(nwindow-1),i) = state(?,?,1->nwindow,i);                  // shift the image stack and add a new image
 	new_state(?,?,nwindow-1,i) = img;      
 	history(?,?,history_ptr(i),i) = img;                                        // Save in history buffer
-	action_history(history_ptr(i)) = actions(i);
+	action_history(history_ptr(i),i) = actions(i);
 	running_rewards(i) += rewards(i);
 	history_ptr(i) += 1;
     }
