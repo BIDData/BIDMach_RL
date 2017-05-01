@@ -4,7 +4,7 @@ import jcuda.jcudnn.cudnnTensorFormat._
 import jcuda.jcudnn.cudnnConvolutionMode._
 import java.util.Random
 
-val nsteps = 200001                     // Number of steps to run (game actions per environment)
+val nsteps = 2000001                     // Number of steps to run (game actions per environment)
 val npar = 16                            // Number of parallel environments
 val target_window = 50                   // Interval to update target estimator from q-estimator
 val discount_factor = 0.99f              // Reward discount factor
@@ -16,8 +16,8 @@ val epsilon_end = 0.1f                   // Final epsilon
 val neps = (0.9*nsteps).toInt            // Number of steps to decay epsilon
 
 val learning_rate = 1e-4f
-val learning_rate = 3e-6f                // Initial learning rate
-val learning_rate = 1e-7f                // Initial learning rate
+val learning_rate = 1e-6f                // Initial learning rate
+//val learning_rate = 1e-7f                // Initial learning rate
 val lr_end = learning_rate               // Final learning rate
 val nlr = neps                           // Steps to decay learning rate
 val gsq_decay = 0.99f                    // Decay factor for MSProp
@@ -196,10 +196,11 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
     and then backward to compute gradients.
     An action vector and reward vector must be given. */  
     
-    def gradient(states:FMat, actions:IMat, rewards:FMat):Float = {
+def gradient(states:FMat, actions:IMat, rewards:FMat, ndout:Int=npar):Float = {
 	val fstates = formatStates(states);
         checkinit(fstates, actions, rewards);
 	net.forward;
+	net.setderiv(ndout);
         net.backward(0, 0);
         val dout = net.layers(net.layers.length-1).score;
         sqrt(-dout/dout.length).fv                             // return the RMS residual error. 
@@ -351,16 +352,21 @@ def thread_gradient(ithread:Int, reward:Float):(Float,Int) = {
 }
 
 def showx(state:FMat) = {
-    val st0 = state(?,?,0->3,0->8).transpose(2\0\3\1);
+    val st0 = state(?,?,1->4,?).transpose(2\0\3\1);
     st0(?,79,?,?) = 1f;
-    val st = st0.reshapeView(3,80*8,80)*255f;
+    val st = st0.reshapeView(3,80*npar,80)*255f;
     show(st)
     st;
 }
 
-def showy(state:FMat) = {
-    val st = state.transpose(0\3\1\2).reshapeView(80*npar,80*nwindow)*255f;
-    st;
+def showy(t:Int, i:Int) = {
+    if (history_ptr(i) > t + 24) {
+    val dd = history(?,?,t->(t+8*3),i).reshapeView(80,80,3,8);
+    dd(79,?,?,?) = 1f;
+    val st = dd.transpose(2\0\3\1).reshapeView(3,80*8,80)*255f;
+    show(st);
+    action_history(t->(t+8*3),i).t.reshapeView(3,8);
+    } else {irow(0)}
 }
 
 

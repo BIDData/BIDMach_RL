@@ -193,6 +193,7 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
 	val fstates = formatStates(states);
         checkinit(fstates, actions, rewards);
 	net.forward;
+	net.setderiv();
         net.backward(0, 0);
         val dout = net.layers(net.layers.length-1).score;
         sqrt(-dout/dout.length).fv                             // return the RMS residual error. 
