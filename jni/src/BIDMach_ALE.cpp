@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <ale_interface.hpp>
 
+
 union VoidLong {
   jlong l;
   void* p;
@@ -42,7 +43,7 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_newALE
 (JNIEnv *env, jobject jale)
 {
-  ALEInterface * alep = new ALEInterface();
+  ALEInterface * alep = new ALEInterface(2);
   int status = (alep != NULL);
   setALE(env, jale, alep);
   
