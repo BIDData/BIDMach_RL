@@ -249,7 +249,7 @@ var total_time=0f;
 var total_steps=0;
 var total_epochs = 0;
 var tbaseline = 0f;
-var block_count = 0;
+var block_count = 0.0;
 var block_reward = 0f
 
 val rn = new Random
@@ -281,7 +281,7 @@ for (i <- 0 until npar) {
 }
 
 total_time = toc     
-tbaseline = block_reward/block_count;
+tbaseline = block_reward/block_count.toFloat;
 println("%d steps, %d epochs in %5.4f seconds at %5.4f msecs/step, R/B = %5.4f" format(
 	 total_steps, total_epochs, total_time, 1000f*total_time/total_steps, tbaseline))
 
@@ -331,21 +331,26 @@ var action_probs:FMat = null;
 val running_rewards = zeros(1, npar);
 
 
-def thread_gradient(ithread:Int, reward:Float):(Float,Int) = {
+def thread_gradient(ithread:Int, reward:Float):(Float,Double) = {
     var i = 0;
-    var iblocks = 0;
+    var iblocks = 0.0;
     var block_loss = 0f;
     val targets = zeros(1,npar);
     targets.set(reward);
-    while (i < history_ptr(ithread) - npar - nwindow - 1) {
+    while (i < history_ptr(ithread) - nwindow - 1) {
 	var j = 0;
-	while (j < npar) {
+	val todo = math.min(npar, history_ptr(ithread) - nwindow - 1 - i);
+	if (todo < npar) {
+	    state.clear;
+	    actions.clear;
+	}
+	while (j < todo) {
 	    state(?,?,?,j) = history(?,?,(i+j)->(i+j+nwindow), ithread);
 	    actions(0,j) = action_history(i+j+nwindow+1, ithread);
 	    j += 1;
 	}
-	block_loss += q_estimator.gradient(state, actions, targets);                // compute q-estimator gradient and return the loss
-	iblocks += 1;
+	block_loss += q_estimator.gradient(state, actions, targets, todo);                // compute q-estimator gradient and return the loss
+	iblocks += todo*1.0/npar;
 	i += npar;
     }
     (block_loss, iblocks);
@@ -425,8 +430,8 @@ for (istep <- 0 until nsteps) {
     val t = toc;
     if (istep % printsteps == 0) {
         total_reward += block_reward;
-        println("step %d, time %2.1f, loss %7.6f, B %d, E %d, R/E %6.5f, CR/E %6.5f" format(
-		istep, t, block_loss/math.max(1,block_count),block_count, total_epochs, 
+        println("step %d, time %2.1f, loss %7.6f, B %.0f, E %d, R/E %6.5f, CR/E %6.5f" format(
+		istep, t, block_loss/math.max(1.0,block_count), block_count, total_epochs, 
                 block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)))
         last_epochs = total_epochs;
         block_reward = 0f;
