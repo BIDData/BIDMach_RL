@@ -31,6 +31,7 @@ val entropyv = 1e-7f;                     // Entropy regularization weight
 val neps = (0.6*nsteps).toInt            // Number of steps to decay epsilon
 val nlr = neps                           // Steps to decay learning rate
 val avar_decay = 0.999f;
+val credit_decay = 0.999f;
 val gsq_decay = 0.99f                    // Decay factor for MSProp
 val vel_decay = 0.9f                     // Momentum decay
 val baseline_decay = 0.9999f;
@@ -55,6 +56,8 @@ val VALID_ACTIONS = irow(0, 3, 4);
 val nactions= VALID_ACTIONS.length;
 val height = 80;
 val width = 80;
+val frameskip = (4,4);
+val repeat_action_probability = 0f;
 val score_range = row(-1f,1f);
 
 def linterp(schedule:FMat, npoints:Int) = {
@@ -341,8 +344,8 @@ tic;
 for (i <- 0 until npar) {
     envs(i) = new ALE;
     envs(i).setInt("random_seed", i);
-    envs(i).setFloat("repeat_action_probability",0.0f)
-    envs(i).frameskip = (4, 4);
+    envs(i).setFloat("repeat_action_probability",repeat_action_probability);
+    envs(i).frameskip = frameskip;
     envs(i).loadROM(game_bin);
 
     val nmoves = rn.nextInt(init_moves - nwindow) + nwindow
@@ -414,10 +417,11 @@ Mat.useGPUcache = true;
 
 val times = zeros(1,8);
 val dtimes = zeros(1,7);
-val rand_actions = int(rand(1, npar) * nactions);
-val (obs0, rewards0, dones0) = ALE.stepAll2(envs, VALID_ACTIONS(rand_actions));           // step through parallel envs
+val ractions = int(rand(1, npar) * nactions);
+val (obs0, rewards0, dones0) = ALE.stepAll2(envs, VALID_ACTIONS(ractions));           // step through parallel envs
 var actions = izeros(1,npar);
 var action_probs:FMat = null;
+val rand_actions = ones(nactions, npar) * (1f/nactions);
 val targwin = target_window / ndqn * ndqn; 
 val printsteps0 = printsteps / ndqn * ndqn; 
 val state_memory = zeros(width\height\nwindow\(npar*ndqn));
