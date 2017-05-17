@@ -9,9 +9,10 @@ val npar = 16;                            // Number of parallel environments
 val ndqn = 5;                             // Number of DQN steps per update
 val target_window = 50;                   // Interval to update target estimator from q-estimator
 val discount_factor = 0.99f;              // Reward discount factor
-val printsteps = 1000;                   // Number of steps between printouts
+val printsteps = 10000;                   // Number of steps between printouts
 val render = false;                       // Whether to render an environment while training
 val nwindow = 4;                          // Sensing window = last n images in a state
+:silent
 val llossv = 0.3f;
 
 val lr_schedule = (0f \ 3e-6f on
@@ -23,6 +24,7 @@ val temp_schedule = (0f \ 1f on
 val entropyv = 1e-5f;                     // Entropy regularization weight
 
 val nlr = (0.6*nsteps).toInt;             // Number of steps to decay epsilon
+:silent
 val ntemp = nlr;                          // Steps to decay learning rate
 val gsq_decay = 0.99f                     // Decay factor for MSProp
 val vel_decay = 0.9f                      // Momentum decay
