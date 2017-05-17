@@ -9,7 +9,7 @@ val npar = 16;                            // Number of parallel environments
 val ndqn = 5;                             // Number of DQN steps per update
 val target_window = 50;                   // Interval to update target estimator from q-estimator
 val discount_factor = 0.99f;              // Reward discount factor
-val printsteps = 10000;                   // Number of steps between printouts
+val printsteps = 1000;                   // Number of steps between printouts
 val render = false;                       // Whether to render an environment while training
 val nwindow = 4;                          // Sensing window = last n images in a state
 val llossv = 0.3f;
@@ -17,15 +17,15 @@ val llossv = 0.3f;
 val lr_schedule = (0f \ 3e-6f on
 		   1f \ 3e-6f); 
 
-val temp_schedule = (0f \ 0.3f on 
+val temp_schedule = (0f \ 1f on 
                      1f \ 0.01f);
 
-val entropyv = 1e-7f;                     // Entropy regularization weight
+val entropyv = 1e-5f;                     // Entropy regularization weight
 
-val nlr = (0.6*nsteps).toInt;            // Number of steps to decay epsilon
-val ntemp = nlr;                           // Steps to decay learning rate
-val gsq_decay = 0.99f                    // Decay factor for MSProp
-val vel_decay = 0.9f                     // Momentum decay
+val nlr = (0.6*nsteps).toInt;             // Number of steps to decay epsilon
+val ntemp = nlr;                          // Steps to decay learning rate
+val gsq_decay = 0.99f                     // Decay factor for MSProp
+val vel_decay = 0.9f                      // Momentum decay
 val baseline_decay = 0.9999f;
 val gclip = 1f;                           // gradient clipping
 
@@ -33,7 +33,7 @@ val nhidden = 16;                         // Number of hidden layers for estimat
 val nhidden2 = 32;
 val nhidden3 = 256;
 
-val init_moves = 4000;                   // Upper bound on random number of moves to take initially
+val init_moves = 4000;                    // Upper bound on random number of moves to take initially
 
 // The epsilon and learning rate decay schedules
 // val epsilons = np.linspace(epsilon_start, epsilon_end, neps)
@@ -141,14 +141,14 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
 	val relu3 =   relu(fc3);
 	val rpred =   linear(relu3)(outdim=nactions,initv=5e-2f); // Q-values
 	ipred =       10;
-	val ppred =   linear(relu3)(outdim=nactions,initv=5e-2f); // Probability weights
+	val ppred =   linear(relu3)(outdim=nactions,initv=5e-2f); // Log probabilities
 
 	// Probability layers
-	val ppredt =  ppred *@ ptemp;
-	val aprob =   softmax(ppredt);
-	iprob =       13;                                        // Index of action policy layer
-	val rmean =   rpred dot aprob;
-	val advtg =   rpred - rmean;                             // Advantage
+	val ppredt =  ppred *@ ptemp;                             // Apply temperature scaling
+	val aprob =   softmax(ppredt);                            // Probabilities
+	iprob =       13;                                         // Index of policy layer
+	val rmean =   rpred dot aprob;                            // rmean = V(s)
+	val advtg =   rpred - rmean;                              // Advantage
 	iadv =        15;
 
 	// Entropy layers
@@ -161,7 +161,7 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
 	val entropy = negent *@ minus1;
 	ientropy =    21;                                        // Index of entropy layer
 	val eweight = constant(entropyv);
-	val entropyw= entropy *@ eweight;
+	val entropyw= entropy *@ eweight;                        // Weighted entropy
 
 	// Action loss layers
 	val rpreda =  rpred(acts);
@@ -170,13 +170,14 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
         iloss =       26;                                        // Index of quadratic loss layer.
 	val nloss =   rloss *@ minus1;
 
-	val loss0 =   nloss + entropyw;
-	val fdiff =   forward(diff);
+	val loss0 =   nloss + entropyw;                          // Q-estimator loss + entropy loss
+	// Policy gradient
+	val diff2 =   target - rmean;
+	val fdiff =   forward(diff2);
 	val lnprob =  lnaprob(acts);
-	val lloss  =  lnprob *@ fdiff;
 
+	val lloss  =  lnprob *@ fdiff;
 	val constwl = constant(llossv);
-	// Total weighted loss layers
 	val llossw =  lloss *@ constwl;
 	val out =     loss0 +  llossw;
 
@@ -187,8 +188,8 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
 			eps      \ aprobeps \ lnaprob  \ negent   on 
 			minus1   \ entropy  \ eweight  \ entropyw on
 			rpreda   \ diff     \ rloss    \ nloss    on
-			loss0    \ fdiff    \ lnprob   \ lloss    on
-                        constwl  \ llossw   \ out      \ null     ).t
+			loss0    \ diff2    \ fdiff    \ lnprob   on
+			lloss    \ constwl  \ llossw   \ out     ).t
      }
 
     val net = new Net(opts);
@@ -454,12 +455,11 @@ for (istep <- ndqn to nsteps by ndqn) {
 	action_memory(i,?) = actions;
 	reward_memory(i,?) = arewards;
 	done_memory(i,?) = dones;
-	if (i < ndqn-1) state <-- new_state;
+	state <-- new_state;
     }
 
-    val (q_next, qaprob, adv_next, _) = t_estimator.predict(state); 
-    state <-- new_state;
-    val v_next = adv_next(actions + offsets);
+    val (q_next, qaprob, _, _) = t_estimator.predict(new_state); 
+    val v_next = q_next dot qaprob;
     reward_memory(ndqn-1,?) = done_memory(ndqn-1,?) *@ reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
     for (i <- (ndqn-2) to 0 by -1) {
 	// Propagate rewards back in time. Actual rewards override predicted rewards. 
