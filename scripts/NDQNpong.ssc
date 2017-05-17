@@ -13,21 +13,22 @@ val printsteps = 10000;                   // Number of steps between printouts
 val render = false;                       // Whether to render an environment while training
 val nwindow = 4;                          // Sensing window = last n images in a state
 :silent
-val epsilon_schedule = (0f \ 0.3f on
-			0.8f \ 0.03f on
+
+val epsilon_schedule = (0f \ 0.2f on
+			0.8f \ 0.02f on
 			0.8f \ 3e-10f on
 			1f \ 3e-10f); 
 
 val lr_schedule = (0f \ 3e-6f on
 		   0.8f \ 3e-6f on
 		   0.8f \ 3e-10f on
-		   1f \ 3e-6f); 
+		   1f \ 3e-10f); 
 
 val lambda_schedule = (0f \ 100f on 
                        1f \ 100f);
 
-val temp_schedule = (0f \ 0.001f on 
-                     1f \ 0.001f);
+val temp_schedule = (0f \ 0.0001f on 
+                     1f \ 0.0001f);
 
 val avarv = 1e-10f;                      // Variance regularization weight
 val entropyv = 1e-7f;                     // Entropy regularization weight
