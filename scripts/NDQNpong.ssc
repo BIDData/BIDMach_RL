@@ -405,6 +405,8 @@ def random_choices(probs:FMat):IMat = {
 tic;
 var block_loss = 0f;
 var block_vloss = 0f;
+var block_wloss = 0f;
+var block_entropy = 0f;
 var block_reward = 0f;
 var total_reward = 0f;
 total_epochs = 0;
@@ -501,6 +503,8 @@ for (istep <- ndqn to nsteps by ndqn) {
 	val (lv, vv, wv, ev) = q_estimator.gradient(new_state, action_memory(i,?), reward_memory(i,?), npar);  
 	block_loss += lv;                                // compute q-estimator gradient and return the loss
 	block_vloss += vv; 
+	block_wloss += wv; 
+	block_entropy += ev; 
     }
     times(6) = toc;
      
@@ -511,14 +515,16 @@ for (istep <- ndqn to nsteps by ndqn) {
     val t = toc;
     if (istep % printsteps0 == 0) {
         total_reward += block_reward;
-        println("I %5d, T %4.1f, L %7.6f, W %7.6f, E %d, R/E %5.4f, CR/E %5.4f" 
-		format(istep, t, block_loss/printsteps/npar, block_vloss/printsteps/npar, total_epochs, 
-		       block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)));
+        println("I %5d, T %4.1f, L %7.6f, V %7.6f, W %7.6, Ent %5.4f, E %d, R/E %5.4f, CR/E %5.4f" 
+		format(istep, t, block_loss/printsteps/npar, block_vloss/printsteps/npar, block_wloss/printsteps/npar, block_entropy/printsteps/npar, 
+		       total_epochs, block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)));
 	reward_plot(istep/printsteps-1) = block_reward/math.max(1,total_epochs-last_epochs);
         last_epochs = total_epochs;
         block_reward = 0f;
         block_loss = 0f;
         block_vloss = 0f;
+        block_wloss = 0f;
+        block_entropy = 0f;
     }
     //    Mat.debugMem = true;
     //    Mat.debugMemThreshold = 0;
