@@ -1,7 +1,7 @@
 package BIDMach.rl.estimators
 
 //
-// An Estimator for standard A3C. 
+// An V-critic (standard) Estimator for A3C. 
 // First input is the current state. 
 // Second input is the action taken by the policy. 
 // Third input is the target value of the current state.
@@ -39,8 +39,8 @@ class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) exte
 	  // Input layers 
 	  val in =      input;
 	  val actions = input;
-	  val atarget =  input;
 	  val vtarget =  input;
+	  val atarget =  input;
 	  
 	  // Settable param layers;
 	  invtemp  =    constant(1);
@@ -71,7 +71,7 @@ class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) exte
 	  entropy =     (logprobs dot probs) *@ minus1;
 	  nentropy =    Net.defaultLayerList.length;
 
-	  // Action loss layers
+	  // Value loss layers
 	  val diff =    vtarget - vpreds;
 	  loss =        diff *@ diff;     
 	  
