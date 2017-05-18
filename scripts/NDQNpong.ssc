@@ -16,19 +16,19 @@ val nwindow = 4;                          // Sensing window = last n images in a
 
 val epsilon_schedule = (0f \ 0.2f on
 			0.8f \ 0.02f on
-			0.8f \ 3e-10f on
-			1f \ 3e-10f); 
+			0.8f \ 1e-12f on
+			1f \ 1e-12f); 
 
 val lr_schedule = (0f \ 3e-6f on
 		   0.8f \ 3e-6f on
-		   0.8f \ 3e-10f on
-		   1f \ 3e-10f); 
+		   0.8f \ 1e-12f on
+		   1f \ 1e-12f); 
 
 val lambda_schedule = (0f \ 100f on 
                        1f \ 100f);
 
-val temp_schedule = (0f \ 0.0001f on 
-                     1f \ 0.0001f);
+val temp_schedule = (0f \ 0.001f on 
+                     1f \ 0.001f);
 
 val avarv = 1e-10f;                      // Variance regularization weight
 val entropyv = 1e-7f;                     // Entropy regularization weight
@@ -87,10 +87,10 @@ val epsilons = linterp(epsilon_schedule, neps);
 val lambdas = linterp(lambda_schedule, neps);
 val temperatures = linterp(temp_schedule, neps);
 
-val save_length = 1000;
-val saved_games = zeros(width\height\save_length\npar);
-val saved_actions = izeros(save_length,npar);
-val saved_preds = zeros(nactions\save_length\npar);
+val save_length = 20000;
+val saved_frames = zeros(width\height\save_length);
+val saved_actions = izeros(save_length,1);
+val saved_preds = zeros(nactions\save_length);
 var igame = 0;
 
 
@@ -315,9 +315,10 @@ class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
         
     def msprop(learning_rate:Float) = {                
         opts.lrate = learning_rate;
-        adagrad.update(0,0,0);
-	net.cleargrad;
-	
+	if (learning_rate > 1e-10f) {
+	    adagrad.update(0,0,0);		
+	    net.cleargrad;
+	}
     }
 
 //    Take an estimator and state and predict the actions
@@ -474,10 +475,13 @@ for (istep <- ndqn to nsteps by ndqn) {
 	    val img = preprocess2(obs(j), img0);                                               // process the observation
 	    new_state(?,?,0->(nwindow-1),j) = state(?,?,1->nwindow,j);              // shift the image stack and add a new image
 	    new_state(?,?,nwindow-1,j) = img;         
-	    saved_games(?,?,igame,i) = img;
-	    saved_actions(igame,i) = actions(i);
-	    saved_preds(?,igame,i) = preds(?,i).reshapeView(nactions,1,1);
+	    if (j == 0) {
+		saved_frames(?,?,igame) = img.reshapeView(width,height,1);
+		saved_actions(igame,0) = actions(0);
+		saved_preds(?,igame) = preds(?,0);
+	    }
 	}    
+	igame = (igame+1) % save_length;
 	total_epochs += sum(dones).v.toInt;
 	block_reward += sum(rewards).v;
 

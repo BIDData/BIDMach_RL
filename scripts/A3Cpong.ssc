@@ -20,10 +20,10 @@ val lr_schedule = (0f \ 3e-6f on
 		   0.8f \ 3e-10f on
 		   1f \ 3e-10f); 
 
-val temp_schedule = (0f \ 1f on 
-		     0.8f \ 0.5f on
+val temp_schedule = (0f \ 0.1f on 
+		     0.8f \ 0.05f on 
 		     0.8f \ 0.0001f on
-                     1f \ 0.0001f);
+                    1f \ 0.0001f);
 
 val entropyv = 1e-4f;                     // Entropy regularization weight
 
@@ -75,10 +75,10 @@ def linterp(schedule:FMat, npoints:Int) = {
 val learning_rates = linterp(lr_schedule, nlr);
 val temperatures = linterp(temp_schedule, ntemp);
 
-val save_length = 1000;
-val saved_games = zeros(width\height\save_length\npar);
-val saved_actions = izeros(save_length,npar);
-val saved_preds = zeros(nactions\save_length\npar);
+val save_length = 10000;
+val saved_frames = zeros(width\height\save_length);
+val saved_actions = izeros(save_length,1);
+val saved_preds = zeros(nactions\save_length);
 var igame = 0;
 
 
@@ -421,7 +421,7 @@ for (istep <- ndqn to nsteps by ndqn) {
     
     for (i <- 0 until ndqn) {
 	times(0) = toc;
-	val (preds, aprobs, adv0, entropy0) = q_estimator.predict(state); // get the next action probabilities etc from the policy
+	val (preds, aprobs, _, _) = q_estimator.predict(state); // get the next action probabilities etc from the policy
 	times(1) = toc;
                                                  
 	actions <-- multirnd(aprobs);                                              // Choose actions using the policy 
@@ -432,10 +432,13 @@ for (istep <- ndqn to nsteps by ndqn) {
 	    val img = preprocess2(obs(j), img0);                                               // process the observation
 	    new_state(?,?,0->(nwindow-1),j) = state(?,?,1->nwindow,j);              // shift the image stack and add a new image
 	    new_state(?,?,nwindow-1,j) = img;         
-	    saved_games(?,?,igame,i) = img;
-	    saved_actions(igame,i) = actions(i);
-	    saved_preds(?,igame,i) = preds(?,i).reshapeView(nactions,1,1);
+	    if (j == 0) {
+		saved_frames(?,?,igame) = img.reshapeView(width,height,1);
+		saved_actions(igame,0) = actions(0);
+		saved_preds(?,igame) = preds(?,0);
+	    }
 	}    
+	igame = (igame+1) % save_length;
 	total_epochs += sum(dones).v.toInt;
 	block_reward += sum(rewards).v;
 
@@ -459,11 +462,11 @@ for (istep <- ndqn to nsteps by ndqn) {
 	done_memory(i,?) = dones;
 	state <-- new_state;
 	times(4) = toc;
-	dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4))
+	dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
     }
 
-    val (q_next, qaprob, _, _) = t_estimator.predict(new_state); 
-    val v_next = q_next dot qaprob;
+    val (q_next, q_prob, _, _) = t_estimator.predict(new_state); 
+    val v_next = q_next dot q_prob;
     times(5) = toc;
 
     reward_memory(ndqn-1,?) = done_memory(ndqn-1,?) *@ reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
