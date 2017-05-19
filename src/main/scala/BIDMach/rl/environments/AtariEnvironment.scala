@@ -12,25 +12,31 @@ import jcuda.jcudnn.JCudnn._
 import scala.util.hashing.MurmurHash3;
 import java.util.HashMap;
 
-class AtariEnvironment(val opts:AtariEnvironment.Options = new AtariEnvironment.Options) extends Environment(opts) {
+class AtariEnvironment(override val opts:AtariEnvironment.Options = new AtariEnvironment.Options) extends Environment(opts) {
   
   val ale:ALE = new ALE;
   ale.setInt("random_seed", opts.random_seed);
   ale.loadROM(opts.rom_name);
-  ale.setFloat("repeat_action_probability",opts.repeat_action_probability);
+  ale.setFloat("repeat_action_probability", opts.repeat_action_probability);
   ale.frameskip = (opts.frameskip(0), opts.frameskip(1));
   
-  val VALID_ACTIONS = ale.getMinimalActionSet;
+  override val VALID_ACTIONS = IMat.make(ale.getMinimalActionSet);
   
-  def step:(FMat, Int, Float);
+  override val score_range = opts.score_range;
   
-  def stepAll:(FMat, IMat, FMat);
+  def step(action:Int):(FMat, Float, Boolean) = ale.step(action);
   
-  def reset;
+  def statedims = {irow(opts.width, opts.height)}
+  
+  def reset() = ale.reset();
   
 }
 
 object AtariEnvironment {
+  
+  def stepAll(envs:Array[Environment], actions:IMat, obs0:Array[FMat], rewards0:FMat, dones0:FMat):(Array[FMat], FMat, FMat) = {
+    ALE.stepAll(envs.map(_.asInstanceOf[AtariEnvironment].ale), actions, obs0, rewards0, dones0);
+  }
   
   class Options extends Environment.Options {
 
@@ -40,6 +46,7 @@ object AtariEnvironment {
     var rom_name = "/code/ALE/roms/Pong.bin";
     var height = 80;
     var width = 80;
+    var score_range = row(-1f,1f);
     
   }
 }

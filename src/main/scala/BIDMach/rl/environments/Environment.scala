@@ -12,15 +12,18 @@ import jcuda.jcudnn.JCudnn._
 import scala.util.hashing.MurmurHash3;
 import java.util.HashMap;
 
-abstract class Environment(val opts:Environment.Options = new Environment.Options) {
+@SerialVersionUID(100L)
+abstract class Environment(val opts:Environment.Options = new Environment.Options) extends Serializable {
   
-  def valid_actions:IMat;
+  val VALID_ACTIONS:IMat;
   
-  def step:(FMat, Int, Float);
+  val score_range:FMat;
   
-  def stepAll:(FMat, IMat, FMat);
+  def step(action:Int):(FMat, Float, Boolean);
   
-  def reset;
+  def statedims:IMat;
+  
+  def reset();
   
 }
 

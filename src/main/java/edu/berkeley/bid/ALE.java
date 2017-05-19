@@ -2,6 +2,8 @@ package edu.berkeley.bid;
 import java.io.*;
 
 public class ALE implements Serializable {
+	
+	static final long serialVersionUID = 100L;
 
     static {
 	LibUtils.loadLibrary("bidmachale", false);

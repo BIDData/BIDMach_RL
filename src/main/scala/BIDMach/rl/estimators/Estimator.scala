@@ -14,8 +14,8 @@ import scala.util.hashing.MurmurHash3;
 import java.util.HashMap;
 import BIDMach.networks._
 
-
-abstract class Estimator(opts:Estimator.Options = new Estimator.Options) {
+@SerialVersionUID(100L)
+abstract class Estimator(opts:Estimator.Options = new Estimator.Options) extends Serializable {
     
     def createNet:Net;
     
