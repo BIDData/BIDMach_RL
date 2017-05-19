@@ -74,7 +74,7 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
 	  loss =        diff *@ diff;     
 	  
 	  // Policy gradient
-	  val values =  (probs dot preds);
+	  val values =  probs dot preds;
 	  val advtg =   target - values;
 	  val pgrad =   logprobs(actions) *@ forward(advtg);
 

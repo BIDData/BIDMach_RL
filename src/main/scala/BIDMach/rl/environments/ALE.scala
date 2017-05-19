@@ -1,4 +1,5 @@
-package BIDMach.rl;
+package BIDMach.rl.environments;
+
 import BIDMat.{IMat,FMat};
 import BIDMat.MatFunctions._;
 import java.util.Random;
