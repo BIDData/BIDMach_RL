@@ -107,20 +107,31 @@ class A3C (
     eopts.nhidden2 = opts.nhidden2;
     eopts.nhidden3 = opts.nhidden3;
     eopts.nactions = nactions;
-// Create estimators
-  	q_estimator = new A3CestimatorQ(eopts);
-  	t_estimator = new A3CestimatorQ(eopts);
-
-//	Initialize them by making predictions
-  	q_estimator.predict(state);
-  	t_estimator.predict(state);
-
-  	var last_epochs = 0;
+    
+    total_steps = 0;
+    block_reward = 0f;
+    total_reward = 0f;
+    block_entropy = 0f;
+    block_loss = 0f;
+    block_count = 0;
+    total_epochs = 0;
+    total_time = 0f;
   	igame = 0;
+  	
+  	var last_epochs = 0;
   	val new_state = state.copy;
   	var dobaseline = false;
   	val baselinethresh  = 0.1f;
+  	val GPUcacheState = Mat.useGPUcache;
+  	val cacheState = Mat.useCache;
   	Mat.useGPUcache = true;
+  	Mat.useCache = false;
+    
+// Create estimators
+  	q_estimator = new A3CestimatorQ(eopts);
+  	t_estimator = new A3CestimatorQ(eopts);
+  	q_estimator.predict(state);    //	Initialize them by making predictions
+  	t_estimator.predict(state);
 
   	val times = zeros(1,8);
   	val dtimes = zeros(1,7);
@@ -231,6 +242,8 @@ class A3C (
   			block_entropy = 0f;
   		}
   	}
+  	Mat.useGPUcache = GPUcacheState;
+  	Mat.useCache = cacheState;
   }
 }
 
