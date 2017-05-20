@@ -63,5 +63,7 @@ public class ALE implements Serializable {
     public native byte [] getScreenRGB(byte [] data);
 
     public native byte [] getScreenGrayscale(byte [] data);
+    
+    public native byte [] getScreenPaletteRGB(byte [] data);
 
 }
