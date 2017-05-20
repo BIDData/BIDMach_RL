@@ -33,7 +33,12 @@ class ALE extends edu.berkeley.bid.ALE {
 		val height = dims(1);
 		val out = if (out0.asInstanceOf[AnyRef] == null) {
 		  if (shrink) {
-		    zeros((width/2), (height/2));
+		  	mode match {
+		  	case 0 => zeros(width/2, height/2);
+		  	case 1 => zeros(width/2, height/2);
+		  	case 2 => zeros(3 \ (width/2) \ (height/2));
+		  	case 3 => zeros(width/2, height/2);
+		  	}
 		  } else {
 		  	mode match {
 		  	case 0 => zeros(width, height);
@@ -50,111 +55,211 @@ class ALE extends edu.berkeley.bid.ALE {
 		if (pool) {
 			if (shrink) {
 				out.clear;
-				if (mode == 3) {
-					val cc = 1f/4;
-					while (i < height) {
-						val irow = i * width;
-						val irow2 = i * (width >> 1);
-						var j = 0;
-						while (j < width) {
-							val ii = irow + j;
-							val jj = irow2 + (j >> 1);
-							val r = if ((buffer(ii) & 0xff) != background || (buffer2(ii) & 0xff) != background) 1f else 0f
-							odata(jj) += r*cc;
-							j += 1;					
-						}
-						i += 1;
-					}	
-				} else {
-					val cc = 1f/3/255/4;
-					while (i < height) {
-						val irow = i * width * 3;
-						val irow2 = i * (width >> 1);
-						var j = 0;
-						while (j < width) {
-							val ii = irow + j*3;
-							val jj = irow2 + (j >> 1);
-							val r = math.max(buffer(ii) & 0xff, buffer2(ii) & 0xff);
-							val g = math.max(buffer(ii+1) & 0xff, buffer2(ii+1) & 0xff);
-							val b = math.max(buffer(ii+2) & 0xff, buffer2(ii+2) & 0xff);
-							odata(jj) += (r+g+b)*cc;
-							j += 1;					
-						}
-						i += 1;
-					}		
+				mode match {
+				  case 0 => throw new RuntimeException("Cant do pooling and shrinking on a native image");
+				  case 1 => {                                // Pool and shrink a grayscale image
+				  	val cc = 1f/3/255/4;
+				  	while (i < height) {
+				  		val irow = i * width * 3;
+				  		val irow2 = i * (width >> 1);
+				  		var j = 0;
+				  		while (j < width) {
+				  			val ii = irow + j*3;
+				  			val jj = irow2 + (j >> 1);
+				  			val r = math.max(buffer(ii) & 0xff, buffer2(ii) & 0xff);
+				  			val g = math.max(buffer(ii+1) & 0xff, buffer2(ii+1) & 0xff);
+				  			val b = math.max(buffer(ii+2) & 0xff, buffer2(ii+2) & 0xff);
+				  			odata(jj) += (r+g+b)*cc;
+				  			j += 1;					
+				  		}
+				  		i += 1;
+				  	}		
+				  }
+				  case 2 => {                                // Pool and shrink a color image
+				    val cc = 1f/255/4;
+				    val len = (width >> 1) * (height >> 1);
+				  	while (i < height) {
+				  		val irow = i * width * 3;
+				  		val irow2 = i * (width >> 1);
+				  		var j = 0;
+				  		while (j < width) {
+				  			val ii = irow + j*3;
+				  			val jj = irow2 + (j >> 1);
+				  			val r = math.max(buffer(ii) & 0xff, buffer2(ii) & 0xff);
+				  			val g = math.max(buffer(ii+1) & 0xff, buffer2(ii+1) & 0xff);
+				  			val b = math.max(buffer(ii+2) & 0xff, buffer2(ii+2) & 0xff);
+				  			odata(jj) += r*cc;
+				  			odata(jj + len) += g*cc;
+				  			odata(jj + len + len) += b*cc;
+				  			j += 1;					
+				  		}
+				  		i += 1;
+				  	}		
+				  }
+				  case 3 => {                                // Pool and shrink a binarized image
+				  	val cc = 1f/4;
+				  	while (i < height) {
+				  		val irow = i * width;
+				  		val irow2 = i * (width >> 1);
+				  		var j = 0;
+				  		while (j < width) {
+				  			val ii = irow + j;
+				  			val jj = irow2 + (j >> 1);
+				  			val r = if ((buffer(ii) & 0xff) != background || (buffer2(ii) & 0xff) != background) 1f else 0f;
+				  			odata(jj) += r*cc;
+				  			j += 1;					
+				  		}
+				  		i += 1;
+				  	}	
+				  }
 				}
-		  } else {
-		  	if (mode == 3) {
-		  		val len = width*height;
-		  		while (i < len) {
-		  			odata(i) = if ((buffer(i) & 0xff) != background || (buffer2(i) & 0xff) != background) 1f else 0f
-		  			i += 1;
-		  		}	  	  
-		  	} else {
-		  		val cc = 1f/3/255;
-		  		val len = width*height;
-		  		var j = 0;
-		  		while (i < len) {
-		  			val r = math.max(buffer(j) & 0xff, buffer2(j) & 0xff);
-		  			val g = math.max(buffer(j+1) & 0xff, buffer2(j+1) & 0xff);
-		  			val b = math.max(buffer(j+2) & 0xff, buffer2(j+2) & 0xff);
-		  			odata(i) = (r+g+b)*cc;
-		  			i += 1;
-		  			j += 3;
-		  		}		
-		  	}
-		  }
-		} else {
-		  if (shrink) {
-		    if (mode == 3) {
-		    	out.clear;
-		    	val cc = 1f/4;
-		    	while (i < height) {
-		    		val irow = i * width;
-		    		val irow2 = i * (width >> 1);
-		    		var j = 0;
-		    		while (j < width) {
-		    			val ii = irow + j;
-		    			val jj = irow2 + (j >> 1);
-		    			val r = if ((buffer(ii) & 0xff) != background) cc else 0f;
-		    			odata(jj) += r;
-		    			j += 1;					
-		    		}
-		    		i += 1;
-		    	}		      
-		    } else {
-		    	out.clear;
-		    	val cc = 1f/3/255/4;
-		    	while (i < height) {
-		    		val irow = i * width * 3;
-		    		val irow2 = i * (width >> 1);
-		    		var j = 0;
-		    		while (j < width) {
-		    			val ii = irow + j*3;
-		    			val jj = irow2 + (j >> 1);
-		    			val r = buffer(ii) & 0xff;
-		    			val g = buffer(ii+1) & 0xff;
-		    			val b = buffer(ii+2) & 0xff;
-		    			odata(jj) += (r+g+b)*cc;
-		    			j += 1;					
-		    		}
-		    		i += 1;
-		    	}
+		  } else {                                       // Pooling without shrinking
+		    mode match {
+		      case 0 => {}
+		      case 1 => {                                // Pool a grayscale image
+		      	val cc = 1f/3/255;
+		      	val len = width*height;
+		      	var j = 0;
+		      	while (i < len) {
+		      		val r = math.max(buffer(j) & 0xff, buffer2(j) & 0xff);
+		      		val g = math.max(buffer(j+1) & 0xff, buffer2(j+1) & 0xff);
+		      		val b = math.max(buffer(j+2) & 0xff, buffer2(j+2) & 0xff);
+		      		odata(i) = (r+g+b)*cc;
+		      		i += 1;
+		      		j += 3;
+		      	}	
+		      }
+		      case 2 => {                                // Pool a color image
+		        val cc = 1f/255;
+		      	val len = width*height;
+		      	var j = 0;
+		      	while (i < len) {
+		      		val r = math.max(buffer(j) & 0xff, buffer2(j) & 0xff);
+		      		val g = math.max(buffer(j+1) & 0xff, buffer2(j+1) & 0xff);
+		      		val b = math.max(buffer(j+2) & 0xff, buffer2(j+2) & 0xff);
+		      		odata(i) = r*cc;
+		      		odata(i + len) = g*cc;
+		      		odata(i + len + len) = b*cc;
+		      		i += 1;
+		      		j += 3;
+		      	}	
+		      }
+		      case 3 => {                                // Pool a binarized image
+		      	val len = width*height;
+		      	while (i < len) {
+		      		odata(i) = if ((buffer(i) & 0xff) != background || (buffer2(i) & 0xff) != background) 1f else 0f;
+		      		i += 1;
+		      		
+		      	}	          
+		      }
 		    }
-		  } else {
-		  	if (mode == 3) {
-		  		val len = width*height;
-		  		while (i < len) {
-		  			odata(i) = if ((buffer(i) & 0xff) != background) 1f else 0f;
-		  			i += 1;
-		  		}		    	  
-		  	} else {
-		  		val len = if (mode == 2) width*height*3 else width*height;
-		  		while (i < len) {
-		  			odata(i) = (buffer(i)) & 0xff;
-		  			i += 1;
-		  		}
-		  	}
+		  }
+		} else {                                         // Dont pool
+		  if (shrink) {                                  // Do shrink
+		    mode match {
+		      case 0 => {                                // Shrink a raw image by downsampling
+		      	out.clear;
+		      	val height2 = (height >>1);
+		      	val width2 = (width >>1);
+		      	while (i < height2) {
+		      		val irow = i * width * 2;
+		      		val irow2 = i * width2;
+		      		var j = 0;
+		      		while (j < width2) {
+		      			val ii = irow + j + j;
+		      			val jj = irow2 + j;
+		      			odata(jj) = (buffer(ii) & 0xff);
+		      			j += 1;					
+		      		}
+		      		i += 1;
+		      	}		        
+		      }
+		      case 1 => {                                // Shrink a grayscale imag
+		        out.clear;
+		      	val cc = 1f/255/4;
+		      	while (i < height) {
+		      		val irow = i * width;
+		      		val irow2 = (i >> 1) * (width >> 1);
+		      		var j = 0;
+		      		while (j < width) {
+		      			val ii = irow + j;
+		      			val jj = irow2 + (j >> 1);
+		      			odata(jj) += (buffer(ii) & 0xff) * cc;
+		      			j += 1;					
+		      		}
+		      		i += 1;
+		      	}
+		      }
+		      case 2 => {                                // Shrink a color image
+		      	out.clear;
+		      	val cc = 1f/255/4;
+		      	val len = width * height/4;
+		      	while (i < height) {
+		      		val irow = i * width * 3;
+		      		val irow2 = i * (width >> 1);
+		      		var j = 0;
+		      		while (j < width) {
+		      			val ii = irow + j*3;
+		      			val jj = irow2 + (j >> 1);
+		      			odata(jj) += (buffer(ii) & 0xff) * cc;
+		      			odata(jj + len) += (buffer(ii+1) & 0xff) * cc;
+		      			odata(jj + len + len) = (buffer(ii+2) & 0xff) * cc;
+		      			j += 1;					
+		      		}
+		      		i += 1;
+		      	}
+		      }
+		      case 3 => {                                // Shrink a binarized image
+		      	out.clear;
+		      	val cc = 1f/4;
+		      	while (i < height) {
+		      		val irow = i * width;
+		      		val irow2 = i * (width >> 1);
+		      		var j = 0;
+		      		while (j < width) {
+		      			val ii = irow + j;
+		      			val jj = irow2 + (j >> 1);
+		      			val r = if ((buffer(ii) & 0xff) != background) cc else 0f;
+		      			odata(jj) += r;
+		      			j += 1;					
+		      		}
+		      		i += 1;
+		      	}		
+		      }
+		    }
+		  } else {                                           // No pooling, no shrinking
+		    mode match {
+		      case 0 => {                                    // Copy a raw image
+		      	val len = width*height;
+		      	while (i < len) {
+		      		odata(i) = buffer(i) & 0xff;
+		      		i += 1;
+		      	}		        
+		      }
+		      case 1 => {                                    // Copy a grayscale image
+		        val cc = 1f/255;
+		      	val len = width*height;
+		      	while (i < len) {
+		      		odata(i) = (buffer(i) & 0xff) * cc;
+		      		i += 1;
+		      	}		        
+		      }
+		      case 2 => {                                    // Copy an RGB image
+		        val cc = 1f/255;
+		      	val len = width*height*3;
+		      	while (i < len) {
+		      		odata(i) = (buffer(i) & 0xff) * cc;
+		      		i += 1;
+		      	}
+		      }
+		      case 3 => {                                    // Copy a binarized image
+		      	val len = width*height;
+		      	while (i < len) {
+		      		odata(i) = if ((buffer(i) & 0xff) != background) 1f else 0f;
+		      		i += 1;
+		      	}			        
+		      }
+		    }
 		  }
 		}
 		out;
