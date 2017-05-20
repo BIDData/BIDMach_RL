@@ -61,7 +61,7 @@ class ALE extends edu.berkeley.bid.ALE {
 				  	val cc = 1f/3/255/4;
 				  	while (i < height) {
 				  		val irow = i * width * 3;
-				  		val irow2 = i * (width >> 1);
+				  		val irow2 = (i >> 1) * (width >> 1);
 				  		var j = 0;
 				  		while (j < width) {
 				  			val ii = irow + j*3;
@@ -80,7 +80,7 @@ class ALE extends edu.berkeley.bid.ALE {
 				    val len = (width >> 1) * (height >> 1);
 				  	while (i < height) {
 				  		val irow = i * width * 3;
-				  		val irow2 = i * (width >> 1);
+				  		val irow2 = (i >> 1) * (width >> 1);
 				  		var j = 0;
 				  		while (j < width) {
 				  			val ii = irow + j*3;
@@ -100,7 +100,7 @@ class ALE extends edu.berkeley.bid.ALE {
 				  	val cc = 1f/4;
 				  	while (i < height) {
 				  		val irow = i * width;
-				  		val irow2 = i * (width >> 1);
+				  		val irow2 = (i >> 1) * (width >> 1);
 				  		var j = 0;
 				  		while (j < width) {
 				  			val ii = irow + j;
