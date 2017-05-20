@@ -49,10 +49,12 @@ object AtariEnvironment {
     var frameskip = irow(4,4);
     var rom_dir = "/code/ALE/roms/"
     var rom_name = "Pong.bin";
-    var height = 80;
-    var width = 80;
     var score_range = row(-1f,1f);
     var mode = 3;
+    var xoff = 0;
+    var yoff = 17;
+    var width = 80;
+    var height = 80;
     var shrink = true;
     var pool = true;
     var background = 34;
