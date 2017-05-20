@@ -29,7 +29,7 @@ abstract class Environment(val opts:Environment.Options = new Environment.Option
 
 object Environment {
   
-  class Options {
+  class Options extends BIDMat.Opts {
     
   }
 }
