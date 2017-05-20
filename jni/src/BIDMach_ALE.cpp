@@ -364,7 +364,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenPaletteRGB
   if (data == NULL) {
     return NULL;
   }
-  if (env->GetArrayLength(jdata) != 3*size) {
+  if (env->GetArrayLength(jdata) != 3*dsize) {
     return NULL;
   }
   alep->theOSystem->colourPalette().applyPaletteRGB((unsigned char *)data, (unsigned char *)screendata, size);
