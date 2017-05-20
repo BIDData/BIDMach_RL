@@ -16,9 +16,13 @@ class AtariEnvironment(override val opts:AtariEnvironment.Options = new AtariEnv
   
   val ale:ALE = new ALE;
   ale.setInt("random_seed", opts.random_seed);
-  ale.loadROM(opts.rom_name);
+  ale.loadROM(opts.rom_dir + opts.rom_name);
   ale.setFloat("repeat_action_probability", opts.repeat_action_probability);
   ale.frameskip = (opts.frameskip(0), opts.frameskip(1));
+  ale.mode = opts.mode;
+  ale.shrink = opts.shrink;
+  ale.pool = opts.pool;
+  ale.background = opts.background;
   
   override val VALID_ACTIONS = IMat.make(ale.getMinimalActionSet);
   
@@ -43,10 +47,15 @@ object AtariEnvironment {
     var random_seed = 0;
     var repeat_action_probability = 0f;
     var frameskip = irow(4,4);
-    var rom_name = "/code/ALE/roms/Pong.bin";
+    var rom_dir = "/code/ALE/roms/"
+    var rom_name = "Pong.bin";
     var height = 80;
     var width = 80;
     var score_range = row(-1f,1f);
+    var mode = 3;
+    var shrink = true;
+    var pool = true;
+    var background = 34;
     
   }
 }
