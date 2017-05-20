@@ -351,7 +351,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenPaletteRGB
   }
   int dsize = 256;
   jbyte *screendata = new jbyte[dsize];
-  for (i = 0; i < size; i++) {
+  for (i = 0; i < dsize; i++) {
     screendata[i] = i;
   }
   if (jdata == NULL) {
