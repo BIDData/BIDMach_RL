@@ -28,6 +28,33 @@ class ALE extends edu.berkeley.bid.ALE {
     }
     buffer0;
   };
+  
+  def cinterp(x:Int, y:Int):Float = {
+    (math.atan2(y, x) / Math.PI * 2).toFloat;
+  }
+  
+  def cmap(r:Int, g:Int, b:Int):Float = {
+    if (r==0 && g==0 & b==0) {
+      0f
+    } else {
+      val rg = math.abs(r-g);
+      val gb = math.abs(g-b);
+      val rb = math.abs(r-b);
+      if (rg > gb) {
+        if (rg > rb) {
+          0.1f + cinterp(r, g)*0.3f;
+        } else {
+        	0.7f + cinterp(b, r)*0.3f;
+        }
+      } else {
+        if (gb > rb) {
+          0.4f + cinterp(g, b)*0.3f;
+        } else {
+        	0.7f + cinterp(b, r)*0.3f;
+        }
+      }
+    }
+  }
 
   def copyObs(out0:FMat):FMat = {
 		if (dims == null) {

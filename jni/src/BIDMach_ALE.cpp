@@ -341,4 +341,36 @@ JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenGrayscale
   return jdata;
 }
 
+JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenPaletteRGB
+(JNIEnv *env, jobject jale, jbyteArray jdata)
+{
+  int i;
+  ALEInterface *alep = getALE(env, jale);
+  if (alep == NULL) {
+    return NULL;
+  }
+  int dsize = 256;
+  jbyte *screendata = new jbyte[dsize];
+  for (i = 0; i < size; i++) {
+    screendata[i] = i;
+  }
+  if (jdata == NULL) {
+    jdata = env->NewByteArray(dsize*3);
+  }
+  if (jdata == NULL) {
+    return NULL; 
+  }
+  jbyte *data = env->GetByteArrayElements(jdata, 0);
+  if (data == NULL) {
+    return NULL;
+  }
+  if (env->GetArrayLength(jdata) != 3*size) {
+    return NULL;
+  }
+  alep->theOSystem->colourPalette().applyPaletteRGB((unsigned char *)data, (unsigned char *)screendata, size);
+  env->ReleaseByteArrayElements(jdata, data, 0);
+  return jdata;
+}
+
+
 }
