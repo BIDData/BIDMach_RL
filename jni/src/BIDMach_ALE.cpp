@@ -336,7 +336,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenGrayscale
     return NULL;
   }
   jbyte *screendata = (jbyte *)screen.getArray();
-  alep->theOSystem->colourPalette().applyPaletteGrayscale((unsigned char *)data, (unsigned char *)screendata, size);
+  alep->theOSystem->colourPalette().applyPaletteGrayscale((unsigned char *)data, (unsigned char *)screendata, dsize);
   env->ReleaseByteArrayElements(jdata, data, 0);
   return jdata;
 }
