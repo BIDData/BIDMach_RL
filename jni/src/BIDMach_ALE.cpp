@@ -336,7 +336,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenGrayscale
     return NULL;
   }
   jbyte *screendata = (jbyte *)screen.getArray();
-  alep->theOSystem->colourPalette().applyPaletteGrayscale((unsigned char *)data, (unsigned char *)screendata, dsize);
+  alep->theOSystem->colourPalette().applyPaletteGrayscale((unsigned char *)data, (unsigned char *)screendata, size);
   env->ReleaseByteArrayElements(jdata, data, 0);
   return jdata;
 }
@@ -367,7 +367,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_berkeley_bid_ALE_getScreenPaletteRGB
   if (env->GetArrayLength(jdata) != 3*dsize) {
     return NULL;
   }
-  alep->theOSystem->colourPalette().applyPaletteRGB((unsigned char *)data, (unsigned char *)screendata, size);
+  alep->theOSystem->colourPalette().applyPaletteRGB((unsigned char *)data, (unsigned char *)screendata, dsize);
   delete [] screendata;
   env->ReleaseByteArrayElements(jdata, data, 0);
   return jdata;
