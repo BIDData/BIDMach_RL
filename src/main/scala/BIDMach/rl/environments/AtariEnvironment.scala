@@ -33,7 +33,9 @@ class AtariEnvironment(override val opts:AtariEnvironment.Options = new AtariEnv
   
   copyOpts;
   
-  override val VALID_ACTIONS = IMat.make(ale.getMinimalActionSet);
+  private val minactions = ale.getMinimalActionSet
+  
+  override val VALID_ACTIONS = new IMat(1, minactions.length, minactions);
   
   override val score_range = opts.score_range;
   
