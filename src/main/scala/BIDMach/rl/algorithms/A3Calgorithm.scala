@@ -47,6 +47,7 @@ class A3Calgorithm (
 	
 	var q_estimator:A3CestimatorQ = null;
 	var t_estimator:A3CestimatorQ = null;
+
 	
 	def startup {
 	  tic;

@@ -30,6 +30,14 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
   var entropy:Layer = null;
   var loss:Layer = null;
   var nentropy = 0;
+  
+  override def formatStates(s:FMat) = {
+    if (net.opts.tensorFormat == Net.TensorNCHW) {
+    	s.reshapeView(s.dims(2)\s.dims(0)\s.dims(0)\s.dims(3));
+    } else {
+    	s.transpose(2\0\1\3);
+    }
+  }
     
 	def createNet:Net = {
 	  import BIDMach.networks.layers.Layer._;
