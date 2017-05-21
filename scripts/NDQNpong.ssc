@@ -1,5 +1,4 @@
 :silent
-import BIDMach.rl.ALE;
 import jcuda.jcudnn.cudnnTensorFormat._
 import jcuda.jcudnn.cudnnConvolutionMode._
 import java.util.Random
@@ -16,12 +15,14 @@ val nwindow = 4;                          // Sensing window = last n images in a
 
 val epsilon_schedule = (0f \ 0.2f on
 			0.8f \ 0.02f on
-			0.8f \ 1e-12f on
+			0.85f \ 0.01f on
+			0.90f \ 1e-12f on
 			1f \ 1e-12f); 
 
 val lr_schedule = (0f \ 3e-6f on
 		   0.8f \ 3e-6f on
-		   0.8f \ 1e-12f on
+		   0.85f \ 3e-7f on
+		   0.90f \ 1e-12f on
 		   1f \ 1e-12f); 
 
 val lambda_schedule = (0f \ 100f on 
@@ -345,7 +346,7 @@ print("Initializing games");
 val envs = new Array[ALE](npar);
 val state = zeros(width\height\nwindow\npar);
 val img0 = zeros(width\height\1\1);
-var obs0:Array[Byte] = null;
+var obs0:FMat = null;
 var total_time=0f;
 var total_steps=0;
 var total_epochs = 0;
@@ -358,19 +359,27 @@ tic;
 for (i <- 0 until npar) {
     envs(i) = new ALE;
     envs(i).setInt("random_seed", i);
-    envs(i).setFloat("repeat_action_probability",repeat_action_probability);
     envs(i).frameskip = frameskip;
     envs(i).loadROM(game_bin);
+    envs(i).setFloat("repeat_action_probability",repeat_action_probability);
+    envs(i).mode = 3;
+    envs(i).background = 34;
+    envs(i).width=80;
+    envs(i).height=80;
+    envs(i).xoff=0;
+    envs(i).yoff=35;
+    envs(i).pool = false;
+    envs(i).shrink = true;
 
     val nmoves = rn.nextInt(init_moves - nwindow) + nwindow
     for (j <- 0 until nmoves) {   
         val action = VALID_ACTIONS(rn.nextInt(nactions));
-        val (obs, reward, done) = envs(i).step2(action);
+        val (obs, reward, done) = envs(i).step(action);
 	obs0 = obs;
         total_steps += 1;
         if (nmoves - j <= nwindow) {
             val k = nwindow - nmoves + j;
-            state(?,?,k,i) = preprocess2(obs, img0)
+            state(?,?,k,i) = obs;
         }
 	if (done || reward != 0) {
 	    block_reward += reward;
@@ -434,7 +443,7 @@ Mat.useGPUcache = true;
 val times = zeros(1,8);
 val dtimes = zeros(1,7);
 val ractions = int(rand(1, npar) * nactions);
-val (obs0, rewards0, dones0) = ALE.stepAll2(envs, VALID_ACTIONS(ractions));           // step through parallel envs
+val (obs0, rewards0, dones0) = ALE.stepAll(envs, VALID_ACTIONS(ractions));           // step through parallel envs
 var actions = izeros(1,npar);
 var action_probs:FMat = null;
 val rand_actions = ones(nactions, npar) * (1f/nactions);
@@ -468,11 +477,11 @@ for (istep <- ndqn to nsteps by ndqn) {
 	val dobranch = (rand(1, npar) < epsilon);                                  // Indicator to branch now
 	val newprobs = dobranch *@ rand_actions + (1-dobranch) *@ aprobs;               // Updated probabilities including eps-greedy
 	actions <-- multirnd(newprobs);                                              // Choose actions using the policy 
-	val (obs, rewards, dones) = ALE.stepAll2(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
+	val (obs, rewards, dones) = ALE.stepAll(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
 	times(2) = toc;
 
 	for (j <- 0 until npar) {                                                     
-	    val img = preprocess2(obs(j), img0);                                               // process the observation
+	    val img = obs(j);                                               // process the observation
 	    new_state(?,?,0->(nwindow-1),j) = state(?,?,1->nwindow,j);              // shift the image stack and add a new image
 	    new_state(?,?,nwindow-1,j) = img;         
 	    if (j == 0) {
