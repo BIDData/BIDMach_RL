@@ -66,6 +66,8 @@ class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends
 
 	  Net.getDefaultNet;
   }
+	
+	override val net = createNet;
 
 	// Set temperature and entropy weight
   override def setConsts2(invtemperature:Float, entropyWeight:Float) = {
