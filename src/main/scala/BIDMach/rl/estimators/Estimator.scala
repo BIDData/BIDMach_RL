@@ -8,6 +8,7 @@ import BIDMach.updaters._
 import BIDMach.mixins._
 import BIDMach.models._
 import BIDMach._
+import BIDMach.rl.algorithms._
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
 import scala.util.hashing.MurmurHash3;
@@ -15,7 +16,7 @@ import java.util.HashMap;
 import BIDMach.networks._
 
 @SerialVersionUID(100L)
-abstract class Estimator(opts:Estimator.Options = new Estimator.Options) extends Serializable {
+abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends Serializable {
     
     def createNet:Net;
     
@@ -99,6 +100,6 @@ abstract class Estimator(opts:Estimator.Options = new Estimator.Options) extends
 
 object Estimator {
   class Options extends Net.Options with ADAGrad.Opts {
-    var convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
+    
   }
 }

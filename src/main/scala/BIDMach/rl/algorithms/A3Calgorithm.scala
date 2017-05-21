@@ -14,11 +14,11 @@ import jcuda.jcudnn.JCudnn._
 import scala.util.hashing.MurmurHash3;
 import java.util.HashMap;
 
-class A3Calgorithm (
+class A3Calgorithm(
 		val envs:Array[Environment], 
 		val parstepper:(Array[Environment], IMat, Array[FMat], FMat, FMat) => (Array[FMat], FMat, FMat),
 		val opts:A3Calgorithm.Options = new A3Calgorithm.Options
-		) {
+		) extends Algorithm {
   
 	val npar = envs.length;                            // Number of parallel environments 
 	
@@ -104,11 +104,6 @@ class A3Calgorithm (
     val learning_rates = loginterp(opts.lr_schedule, nsteps+1);
     val temperatures = loginterp(opts.temp_schedule, nsteps+1);
     val ndqn = opts.ndqn;
-    val eopts = new A3CestimatorQ.Options;
-    eopts.nhidden = opts.nhidden;
-    eopts.nhidden2 = opts.nhidden2;
-    eopts.nhidden3 = opts.nhidden3;
-    eopts.nactions = nactions;
     
     total_steps = 0;
     block_reward = 0f;
@@ -130,8 +125,8 @@ class A3Calgorithm (
   	Mat.useCache = false;
     
 // Create estimators
-  	q_estimator = new A3CestimatorQ(eopts);
-  	t_estimator = new A3CestimatorQ(eopts);
+  	q_estimator = new A3CestimatorQ(opts.asInstanceOf[A3CestimatorQ.Options]);
+  	t_estimator = new A3CestimatorQ(opts.asInstanceOf[A3CestimatorQ.Options]);
   	q_estimator.predict(state);    //	Initialize them by making predictions
   	t_estimator.predict(state);
   	  	
@@ -251,8 +246,9 @@ class A3Calgorithm (
 }
 
 object A3Calgorithm {
-  class Options extends Net.Options with ADAGrad.Opts {
-  	var nsteps = 400000;                             // Number of steps to run (game actions per environment)
+  class Options extends Algorithm.Options {
+    
+    var nsteps = 400000;                             // Number of steps to run (game actions per environment)
   	var ndqn = 5;                                    // Number of DQN steps per update
   	var target_window = 50;                          // Interval to update target estimator from q-estimator
   	var print_steps = 10000;                         // Number of steps between printouts
@@ -263,17 +259,10 @@ object A3Calgorithm {
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var policygrad_weight = 0.3f;                    // Weight of policy gradient compared to regression loss
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
-  	var lr_schedule = (0f \ 3e-6f on 1f \ 3e-6f);    // Learning rate schedule
-  	var temp_schedule = (0f \ 1f on 1f \ 1f);        // Temperature schedule
   	var baseline_decay = 0.9999f;                    // Reward baseline decay
   	
-  	var gclip = 1f;                                  // gradient clipping
-  	gsq_decay = 0.99f;                               // Decay factor for MSProp
-  	vel_decay = 0.0f                                 // Momentum decay
-
-  	var nhidden = 16;                                // Number of hidden layers for estimators
-  	var nhidden2 = 32;
-  	var nhidden3 = 256;
+  	var lr_schedule = (0f \ 3e-6f on 1f \ 3e-6f);    // Learning rate schedule
+  	var temp_schedule = (0f \ 1f on 1f \ 1f);        // Temperature schedule
 
   }
 }

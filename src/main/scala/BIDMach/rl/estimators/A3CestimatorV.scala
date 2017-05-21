@@ -14,6 +14,7 @@ import BIDMat.SciFunctions._
 import BIDMach.networks.layers._;
 import BIDMach.networks._
 import BIDMach._
+import BIDMach.rl.algorithms._;
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
 import scala.util.hashing.MurmurHash3;
@@ -103,7 +104,7 @@ class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) exte
 };
 
 object A3CestimatorV {
-  class Options extends Estimator.Options {
+  class Options extends A3Calgorithm.Options {
     var nhidden = 16;
     var nhidden2 = 32;
     var nhidden3 = 256;
