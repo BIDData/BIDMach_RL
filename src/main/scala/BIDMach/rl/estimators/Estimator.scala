@@ -61,7 +61,7 @@ abstract class Estimator(opts:Estimator.Options = new Estimator.Options) extends
     def predict(states:FMat, nlayers:Int = 0) = {
     	val fstates = formatStates(states);
     	checkinit(fstates, null, null);
-    	val nlayers0 = if (nlayers > 0) nlayers else net.layers.length;
+    	val nlayers0 = if (nlayers > 0) nlayers else (net.layers.length-1);
     	for (i <- 0 to nlayers0) net.layers(i).forward;
     }
 
