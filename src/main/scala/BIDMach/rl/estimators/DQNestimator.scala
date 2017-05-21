@@ -3,12 +3,12 @@ package BIDMach.rl.estimators
 import BIDMat.{Mat,SBMat,CMat,DMat,FMat,IMat,LMat,HMat,GMat,GDMat,GIMat,GLMat,GSMat,GSDMat,SMat,SDMat}
 import BIDMat.MatFunctions._
 import BIDMat.SciFunctions._
-import BIDMach.networks.layers._;
 import BIDMach._
+import BIDMach.networks._
+import BIDMach.networks.layers._;
 import BIDMach.rl.algorithms._
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
-import BIDMach.networks._
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 
@@ -97,10 +97,12 @@ class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends
 };
 
 object DQNestimator {
-  class Options extends NDQNalgorithm.Options {
+  trait Opts extends Estimator.Opts {
     var nhidden = 16;
     var nhidden2 = 32;
     var nhidden3 = 256;
     var nactions = 3;
   }
+  
+  class Options extends Opts {}
 }

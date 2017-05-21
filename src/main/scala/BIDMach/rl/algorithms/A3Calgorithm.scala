@@ -63,7 +63,7 @@ class A3Calgorithm(
 	  
 	  save_length = opts.save_length;
 	  saved_frames = zeros(envs(0).statedims\save_length);
-	  saved_actions = izeros(save_length,1);
+	  saved_actions = izeros(1,save_length);
 	  saved_preds = zeros(nactions\save_length);
 	  
 	  print("Initializing Environments")
@@ -170,13 +170,12 @@ class A3Calgorithm(
   			for (j <- 0 until npar) {                                                                                                    // process the observation
   				new_state(?,?,0->(nwindow-1),j) = state(?,?,1->nwindow,j);              // shift the image stack and add a new image
   				new_state(?,?,nwindow-1,j) = obs(j);         
-  				if (j == 0) {
-  					saved_frames(?,?,igame) = obs(0).reshapeView(envs(0).statedims\1);
-  					saved_actions(igame,0) = actions(0);
-  					saved_preds(?,igame) = preds(?,0);
-  				}
-  			}    
+  			}
+  			saved_frames(?,?,igame) = obs(0).reshapeView(envs(0).statedims\1);
+  			saved_actions(0,igame) = actions(0);
+  			saved_preds(?,igame) = preds(?,0);
   			igame = (igame+1) % save_length;
+  			
   			total_epochs += sum(dones).v.toInt;
   			block_reward += sum(rewards).v;
 
@@ -246,7 +245,7 @@ class A3Calgorithm(
 }
 
 object A3Calgorithm {
-  class Options extends Algorithm.Options {
+  trait Opts extends Algorithm.Opts {
     
     var nsteps = 400000;                             // Number of steps to run (game actions per environment)
   	var ndqn = 5;                                    // Number of DQN steps per update
@@ -263,6 +262,7 @@ object A3Calgorithm {
   	
   	var lr_schedule = (0f \ 3e-6f on 1f \ 3e-6f);    // Learning rate schedule
   	var temp_schedule = (0f \ 1f on 1f \ 1f);        // Temperature schedule
-
   }
+  
+  class Options extends Opts {}
 }

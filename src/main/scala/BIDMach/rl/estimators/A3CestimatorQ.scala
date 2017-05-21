@@ -114,11 +114,13 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
 };
 
 object A3CestimatorQ {
-  class Options extends A3Calgorithm.Options {
+  trait Opts extends Estimator.Opts {
     var nhidden = 16;
     var nhidden2 = 32;
     var nhidden3 = 256;
     var nactions = 3;
     tensorFormat = Net.TensorNCHW;
   }
+  
+  class Options extends Opts {}
 }

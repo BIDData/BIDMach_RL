@@ -105,7 +105,9 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
 };
 
 object Estimator {
-  class Options extends Net.Options with ADAGrad.Opts {
+  trait Opts extends Net.Opts with ADAGrad.Opts {
     
   }
+  
+  trait Options extends Opts {}
 }

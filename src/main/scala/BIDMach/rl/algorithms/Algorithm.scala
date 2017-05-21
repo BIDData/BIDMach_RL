@@ -22,7 +22,7 @@ abstract class Algorithm extends Serializable {
 }
 
 object Algorithm {
-  class Options extends Net.Options with ADAGrad.Opts { 	
+  trait Opts extends Net.Opts with ADAGrad.Opts { 	
   	clipByValue = 1f;                                // gradient clipping
   	gsq_decay = 0.99f;                               // Decay factor for MSProp
   	vel_decay = 0.0f;                                // Momentum decay
@@ -30,4 +30,6 @@ object Algorithm {
   	vexp = 1f;
   	waitsteps = -1;
   }
+  
+  class Options extends Opts {}   
 }
