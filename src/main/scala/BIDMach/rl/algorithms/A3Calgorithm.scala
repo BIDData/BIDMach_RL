@@ -65,6 +65,7 @@ class A3Calgorithm (
 	  saved_actions = izeros(save_length,1);
 	  saved_preds = zeros(nactions\save_length);
 	  
+	  print("Initializing Environments")
 	  for (i <- 0 until npar) {
 	  	val nmoves = rn.nextInt(opts.init_moves - nwindow) + nwindow;
 	  	for (j <- 0 until nmoves) {   
