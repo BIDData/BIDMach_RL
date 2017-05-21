@@ -1,0 +1,516 @@
+:silent
+import jcuda.jcudnn.cudnnTensorFormat._
+import jcuda.jcudnn.cudnnConvolutionMode._
+import java.util.Random
+
+val nsteps = 100000;                     // Number of steps to run (game actions per environment)
+val npar = 16;                            // Number of parallel environments
+val ndqn = 5;                             // Number of DQN steps per update
+val target_window = 50;                   // Interval to update target estimator from q-estimator
+val discount_factor = 0.99f;              // Reward discount factor
+val printsteps = 10000;                   // Number of steps between printouts
+val render = false;                       // Whether to render an environment while training
+val nwindow = 4;                          // Sensing window = last n images in a state
+:silent
+val llossv = 0.3f;
+
+val lr_schedule = (0f \ 3e-6f on
+		   0.8f \ 3e-6f on
+		   0.8f \ 3e-10f on
+		   1f \ 3e-10f); 
+
+val temp_schedule = (0f \ 0.1f on 
+		     0.8f \ 0.05f on 
+		     0.8f \ 0.0001f on
+                    1f \ 0.0001f);
+
+val entropyv = 1e-4f;                     // Entropy regularization weight
+
+val nlr = (nsteps).toInt;             // Number of steps to decay epsilon
+:silent
+val ntemp = nlr;                          // Steps to decay learning rate
+val gsq_decay = 0.99f                     // Decay factor for MSProp
+val vel_decay = 0.9f                      // Momentum decay
+val baseline_decay = 0.9999f;
+val gclip = 1f;                           // gradient clipping
+
+val nhidden = 16;                         // Number of hidden layers for estimators
+val nhidden2 = 32;
+val nhidden3 = 256;
+
+val init_moves = 4000;                    // Upper bound on random number of moves to take initially
+
+// The epsilon and learning rate decay schedules
+// val epsilons = np.linspace(epsilon_start, epsilon_end, neps)
+
+
+// Model type and action definitions
+
+val game_bin="/code/ALE/roms/Pong.bin";                 
+val VALID_ACTIONS = irow(0, 3, 4);
+val nactions= VALID_ACTIONS.length;
+val height = 80;
+val width = 80;
+val frameskip = (4,4);
+val repeat_action_probability = 0f;
+val score_range = row(-1f,1f);
+
+def linterp(schedule:FMat, npoints:Int) = {
+    val out = zeros(1, npoints);
+    var i = 0;
+    var isched = 0;
+    while (i < npoints) {
+	val vv = i*1.0f/npoints;
+	while (isched+1 < schedule.nrows && vv > schedule(isched+1, 0)) {
+	    isched += 1;
+	}
+	val frac = (vv - schedule(isched, 0))/(schedule(isched+1, 0)-schedule(isched, 0));
+	out.data(i) = math.exp(frac * math.log(schedule(isched+1, 1)) + (1-frac) * math.log(schedule(isched, 1))).toFloat;
+	i += 1;
+    }
+    out;
+};
+
+val learning_rates = linterp(lr_schedule, nlr);
+val temperatures = linterp(temp_schedule, ntemp);
+
+val save_length = 10000;
+val saved_frames = zeros(width\height\save_length);
+val saved_actions = izeros(save_length,1);
+val saved_preds = zeros(nactions\save_length);
+var igame = 0;
+
+
+def preprocess2(I:Array[Byte], out:FMat):FMat = {
+//  Preprocess Pong game frames into vectors.
+//  Input:
+//    - (3,160,210) uint8 frame representing Pong game screen.
+//  Returns:
+//    - Downsampled (DxD) matrix of 0s and 1s
+    var i = 0;
+    val res = if (out.asInstanceOf[AnyRef] == null) zeros(width\height\1\1) else out;
+    res.clear
+    while (i < height*2) {
+        var j = 0;
+	val i2 = i >> 1;
+        while (j < width*2) {
+	    val j2 = j >> 1;	
+            val x = I(j + 160 * (i + 35));
+	    val y = {if (x == 34) 0f else {if (x != 0) 1f else 0f}};
+            res.data(j2 + width*i2) += y * 0.25f;
+            j += 1;
+        }
+        i += 1;
+    }
+    res
+}
+
+val convt = CUDNN_CROSS_CORRELATION;
+val tformat = Net.TensorNCHW;
+
+class Myopts extends Net.Options with ADAGrad.Opts;
+
+class Estimator(nhidden:Int, nhidden2:Int, nhidden3:Int, nactions:Int) {
+    
+    val opts = new Myopts;  
+    opts.vexp = 1f;
+    opts.texp = 0f;
+    opts.waitsteps = -1;
+    opts.vel_decay = vel_decay;
+    opts.gsq_decay = gsq_decay;
+    opts.tensorFormat = tformat;
+
+
+    var ipred = 0;
+    var iprob = 0;
+    var iloss = 0;
+    var iadv = 0;
+    var ientropy = 0;
+    
+    {
+	import BIDMach.networks.layers.Node._;
+	// Input layers
+	val in =      input;
+	val acts =    input;
+	val target =  input;
+	val ptemp  =  constant(1/temperatures(0));
+
+	// Convolution layers
+	val conv1 =   conv(in)(w=7,h=7,nch=nhidden,stride=4,pad=3,initv=1f,convType=convt);
+	val relu1 =   relu(conv1);
+	val conv2 =   conv(relu1)(w=3,h=3,nch=nhidden2,stride=2,pad=0,convType=convt);
+	val relu2 =   relu(conv2);
+
+	// FC/reward prediction layers
+	val fc3 =     linear(relu2)(outdim=nhidden3,initv=2e-2f);
+	val relu3 =   relu(fc3);
+	val rpred =   linear(relu3)(outdim=nactions,initv=5e-2f); // Q-values
+	ipred =       10;
+	val ppred =   linear(relu3)(outdim=nactions,initv=5e-2f); // Log probabilities
+
+	// Probability layers
+	val ppredt =  ppred *@ ptemp;                             // Apply temperature scaling
+	val aprob =   softmax(ppredt);                            // Probabilities
+	iprob =       13;                                         // Index of policy layer
+	val rmean =   rpred dot aprob;                            // rmean = V(s)
+	val advtg =   rpred - rmean;                              // Advantage
+	iadv =        15;
+
+	// Entropy layers
+	val eps =     constant(1e-6f);
+	val aprobeps =aprob + eps;
+	val lnaprob = ln(aprobeps);
+	val negent =  lnaprob dot aprob;
+
+	val minus1 =  constant(-1f);
+	val entropy = negent *@ minus1;
+	ientropy =    21;                                        // Index of entropy layer
+	val eweight = constant(entropyv);
+	val entropyw= entropy *@ eweight;                        // Weighted entropy
+
+	// Action loss layers
+	val rpreda =  rpred(acts);
+	val diff =    target - rpreda;
+	val rloss =   diff *@ diff;
+        iloss =       26;                                        // Index of quadratic loss layer.
+	val nloss =   rloss *@ minus1;
+
+	val loss0 =   nloss + entropyw;                          // Q-estimator loss + entropy loss
+	// Policy gradient
+	val diff2 =   target - rmean;
+	val fdiff =   forward(diff2);
+	val lnprob =  lnaprob(acts);
+
+	val lloss  =  lnprob *@ fdiff;
+	val constwl = constant(llossv);
+	val llossw =  lloss *@ constwl;
+	val out =     loss0 +  llossw;
+
+	opts.nodemat = (in       \ acts     \ target   \ ptemp    on
+		        conv1    \ relu1    \ conv2    \ relu2    on
+		        fc3      \ relu3    \ rpred    \ ppred    on
+			ppredt   \ aprob    \ rmean    \ advtg    on
+			eps      \ aprobeps \ lnaprob  \ negent   on 
+			minus1   \ entropy  \ eweight  \ entropyw on
+			rpreda   \ diff     \ rloss    \ nloss    on
+			loss0    \ diff2    \ fdiff    \ lnprob   on
+			lloss    \ constwl  \ llossw   \ out     ).t
+     }
+
+    val net = new Net(opts);
+    val adagrad = new ADAGrad(opts);
+    
+    def formatStates(s:FMat):FMat = {
+        if (tformat == Net.TensorNCHW) {
+            s.reshapeView(nwindow\height\width\npar);
+        } else {
+            s.reshapeView(height\width\nwindow\npar).transpose(2\0\1\3);
+        }
+    }
+    
+/** Perform the initialization that is normally done by the Learner */
+
+    var initialized = false;
+    
+    def checkinit(states:FMat, actions:IMat, rewards:FMat) = {
+	if (net.mats.asInstanceOf[AnyRef] == null) {
+	    net.mats = new Array[Mat](3);
+	    net.gmats = new Array[Mat](3);
+	}
+	net.mats(0) = states;
+	if (net.mats(1).asInstanceOf[AnyRef] == null) {
+	    net.mats(1) = izeros(1, states.ncols);              // Dummy action vector
+	    net.mats(2) = zeros(1, states.ncols);               // Dummy reward vector
+	}
+	if (actions.asInstanceOf[AnyRef] != null) {
+	    net.mats(1) <-- actions;
+	}
+	if (rewards.asInstanceOf[AnyRef] != null) {
+	    net.mats(2) <-- rewards;
+	}
+        if (!initialized) {
+	    net.useGPU = (opts.useGPU && Mat.hasCUDA > 0);
+	    net.init();
+            adagrad.init(net);
+            initialized = true;
+        }
+	net.copyMats(net.mats, net.gmats);
+	net.assignInputs(net.gmats, 0, 0);
+	net.assignTargets(net.gmats, 0, 0);
+    }
+    
+/**  Run the model forward given a state as input up to the action prediction layer. 
+     Action selection/scoring layers are not updated.
+     returns action predictions */
+     def predict(states:FMat):(FMat,FMat,FMat,FMat) = {
+	val fstates = formatStates(states);
+        checkinit(fstates, null, null);
+        for (i <- 0 to ientropy) net.layers(i).forward;
+	(FMat(net.layers(ipred).output), 
+	 FMat(net.layers(iprob).output), 
+	 FMat(net.layers(iadv).output), 
+	 FMat(net.layers(ientropy).output));
+    }
+
+/** Run the model all the way forward to the squared loss output layer, 
+    and then backward to compute gradients.
+    An action vector and reward vector must be given. */  
+
+    def gradient(states:FMat, actions:IMat, rewards:FMat, ndout:Int=npar):(Float,Float) = {
+	val fstates = formatStates(states);
+        checkinit(fstates, actions, rewards);
+	net.forward;
+	net.setderiv(ndout);
+        net.backward(0, 0);
+        val lout = cpu(net.layers(iloss).output)(0,0->ndout);      // base loss
+        val eout = cpu(net.layers(ientropy).output)(0,0->ndout);   // entropy
+	val lv = sum(lout).fv                               // return the regression loss
+	val ev = sum(eout).fv                               // return the avg entropy
+	(lv, ev);        
+    }
+    
+  /*    def gradient(states:FMat, actions:IMat, rewards:FMat):Float = {
+	val fstates = formatStates(states);
+        checkinit(fstates, actions, rewards);
+	net.forward;
+	net.setderiv();
+        net.backward(0, 0);
+        val dout = net.layers(net.layers.length-1).output;
+      (-sum(dout)/dout.length).fv                             // return the avg residual error. 
+      }*/
+        
+/** MSprop, i.e. RMSprop without the square root, or natural gradient */
+        
+    def msprop(learning_rate:Float) = {                
+        opts.lrate = learning_rate;
+        adagrad.update(0,0,0);
+	net.cleargrad;
+	
+    }
+
+//    Take an estimator and state and predict the actions
+    def setconsts(temperature:Float) = {
+	net.layers(3).asInstanceOf[BIDMach.networks.layers.ConstantLayer].opts.value =  1f/temperature;
+    }
+
+    def update_estimator(to_estimator:Estimator, window:Int, istep:Int) = {
+//    every <window> steps, Copy model state from from_estimator into to_estimator
+	if (istep % window == 0) {
+	    for (k  <- 0 until net.modelmats.length) {
+		to_estimator.net.modelmats(k) <-- net.modelmats(k);
+	    }
+	}
+    }
+
+};
+
+
+// Initialize the games
+print("Initializing games");
+val envs = new Array[ALE](npar);
+val state = zeros(width\height\nwindow\npar);
+val img0 = zeros(width\height\1\1);
+var obs0:FMat = null;
+var total_time=0f;
+var total_steps=0;
+var total_epochs = 0;
+var block_reward = 0f;
+var block_count = 0;
+val reward_plot = zeros(1, nsteps/printsteps);
+val rn = new Random;
+
+tic;
+for (i <- 0 until npar) {
+    envs(i) = new ALE;
+    envs(i).setInt("random_seed", i);
+    envs(i).loadROM(game_bin);
+    envs(i).setFloat("repeat_action_probability",repeat_action_probability);
+    envs(i).frameskip = frameskip;
+    envs(i).mode = 3;
+    envs(i).background = 34;
+    envs(i).width=80;
+    envs(i).height=80;
+    envs(i).xoff=0;
+    envs(i).yoff=35;
+    envs(i).pool = false;
+    envs(i).shrink = true;
+
+
+    val nmoves = rn.nextInt(init_moves - nwindow) + nwindow
+    for (j <- 0 until nmoves) {   
+        val action = VALID_ACTIONS(rn.nextInt(nactions));
+        val (obs, reward, done) = envs(i).step(action);
+	obs0 = obs;
+        total_steps += 1;
+        if (nmoves - j <= nwindow) {
+            val k = nwindow - nmoves + j;
+            state(?,?,k,i) = obs;
+        }
+	if (done || reward != 0) {
+	    block_reward += reward;
+	    block_count += 1;
+	}
+        if (done) {
+            envs(i).reset() 
+            total_epochs += 1;
+        }
+    }
+    print(".");
+}
+
+var rbaseline = block_reward/block_count.toFloat;
+var rbaseline0 = rbaseline;
+total_time = toc;     
+println("\n%d steps, %d epochs in %5.4f seconds at %5.4f msecs/step" format(
+    total_steps, total_epochs, total_time, 1000f*total_time/total_steps))
+
+
+// Create estimators
+val q_estimator = new Estimator(nhidden, nhidden2, nhidden3, nactions);
+val t_estimator = new Estimator(nhidden, nhidden2, nhidden3, nactions);
+
+// Initialize them by making predictions
+q_estimator.predict(state);
+t_estimator.predict(state);
+
+def random_choices(probs:FMat):IMat = {
+    val result = izeros(1, probs.ncols);
+    var i = 0;
+    while (i < probs.ncols) {
+        val r = rn.nextFloat();
+        var j = 0;
+        var cumprob = probs(0, i);
+        while (r > cumprob && j+1 < probs.nrows) {
+            j += 1;
+            cumprob += probs(j, i);
+        }
+        result(i) = j;
+        i += 1
+    }
+    result
+}
+
+tic;
+var block_loss = 0f;
+var block_entropy = 0f;
+var block_reward = 0f;
+var total_reward = 0f;
+total_epochs = 0;
+var last_epochs = 0;
+val new_state = state.copy;
+var dobaseline = false;
+val baselinethresh  = 0.1f;
+Mat.useGPUcache = true;
+
+
+val times = zeros(1,8);
+val dtimes = zeros(1,7);
+val ractions = int(rand(1, npar) * nactions);
+val (obs0, rewards0, dones0) = ALE.stepAll(envs, VALID_ACTIONS(ractions));           // step through parallel envs
+var actions = izeros(1,npar);
+var action_probs:FMat = null;
+val rand_actions = ones(nactions, npar) * (1f/nactions);
+val targwin = target_window / ndqn * ndqn; 
+val printsteps0 = printsteps / ndqn * ndqn; 
+val state_memory = zeros(width\height\nwindow\(npar*ndqn));
+val action_memory = izeros(ndqn\npar);
+val reward_memory = zeros(ndqn\npar);
+val done_memory = zeros(ndqn\npar);
+val offsets = irow(0->npar) *@ nactions;
+
+for (istep <- ndqn to nsteps by ndqn) {
+//    if (render): envs[0].render()
+    val lr = learning_rates(math.min(istep, nlr-1));                                // update the decayed learning rate
+    val temp = temperatures(math.min(istep, ntemp-1));                                // get an epsilon for the eps-greedy policy
+    q_estimator.setconsts(temp);
+    t_estimator.setconsts(temp);
+
+    q_estimator.update_estimator(t_estimator, targwin, istep);          // update the target estimator if needed    
+    
+    for (i <- 0 until ndqn) {
+	times(0) = toc;
+	val (preds, aprobs, _, _) = q_estimator.predict(state); // get the next action probabilities etc from the policy
+	times(1) = toc;
+                                                 
+	actions <-- multirnd(aprobs);                                              // Choose actions using the policy 
+	val (obs, rewards, dones) = ALE.stepAll(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
+	times(2) = toc;
+
+	for (j <- 0 until npar) {                                                     
+	    val img = obs(j);                                               // process the observation
+	    new_state(?,?,0->(nwindow-1),j) = state(?,?,1->nwindow,j);              // shift the image stack and add a new image
+	    new_state(?,?,nwindow-1,j) = img;         
+	    if (j == 0) {
+		saved_frames(?,?,igame) = img.reshapeView(width,height,1);
+		saved_actions(igame,0) = actions(0);
+		saved_preds(?,igame) = preds(?,0);
+	    }
+	}    
+	igame = (igame+1) % save_length;
+	total_epochs += sum(dones).v.toInt;
+	block_reward += sum(rewards).v;
+
+	times(3) = toc;
+    
+	dones <-- (dones + (rewards != 0f) > 0f);
+
+	if (sum(dones).v > 0) rbaseline = baseline_decay * rbaseline + (1-baseline_decay) * (sum(rewards).v / sum(dones).v);
+	if (! dobaseline && rbaseline - rbaseline0 > baselinethresh * (score_range(1) - score_range(0))) {
+	    dobaseline = true;
+	    rbaseline0 = rbaseline;
+	}
+	val arewards = if (dobaseline) {
+	    rewards - (dones > 0) *@ (rbaseline - rbaseline0);
+	} else {
+	    rewards;
+	}
+	state_memory(?,?,?,(i*npar)->((i+1)*npar)) = state;
+	action_memory(i,?) = actions;
+	reward_memory(i,?) = arewards;
+	done_memory(i,?) = dones;
+	state <-- new_state;
+	times(4) = toc;
+	dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
+    }
+
+    val (q_next, q_prob, _, _) = t_estimator.predict(new_state); 
+    val v_next = q_next dot q_prob;
+    times(5) = toc;
+
+    reward_memory(ndqn-1,?) = done_memory(ndqn-1,?) *@ reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
+    for (i <- (ndqn-2) to 0 by -1) {
+	// Propagate rewards back in time. Actual rewards override predicted rewards. 
+	reward_memory(i,?) = done_memory(i,?) *@ reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ discount_factor;
+    }
+
+    // Now compute gradients for the states/actions/rewards saved in the table.
+    for (i <- 0 until ndqn) {
+	new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar))
+	val (lv, ev) = q_estimator.gradient(new_state, action_memory(i,?), reward_memory(i,?), npar);  
+	block_loss += lv;                                // compute q-estimator gradient and return the loss
+	block_entropy += ev; 
+    }
+    times(6) = toc;
+     
+    q_estimator.msprop(lr);                       // apply the gradient update
+    times(7) = toc;
+    
+    dtimes(0,4->7) = dtimes(0,4->7) + (times(0,5->8) - times(0,4->7));
+    val t = toc;
+    if (istep % printsteps0 == 0) {
+        total_reward += block_reward;
+        println("I %5d, T %4.1f, L %7.6f, Ent %5.4f, E %d, R/E %5.4f, CR/E %5.4f" 
+		format(istep, t, block_loss/printsteps/npar, block_entropy/printsteps/npar, 
+		       total_epochs, block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)));
+	reward_plot(istep/printsteps-1) = block_reward/math.max(1,total_epochs-last_epochs);
+        last_epochs = total_epochs;
+        block_reward = 0f;
+        block_loss = 0f;
+        block_entropy = 0f;
+    }
+    //    Mat.debugMem = true;
+    //    Mat.debugMemThreshold = 0;
+}
+Mat.useGPUcache=false
+:silent
+dtimes
