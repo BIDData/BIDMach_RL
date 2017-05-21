@@ -46,9 +46,7 @@ class A3Calgorithm(
 	var saved_preds:FMat = null; 
 	var reward_plot:FMat = null;
 	
-	var q_estimator:Estimator = null;
-	var t_estimator:Estimator = null;
-
+	var estimator:Estimator = null;
 	
 	def startup {
 	  tic;
@@ -126,10 +124,8 @@ class A3Calgorithm(
   	Mat.useCache = false;
     
 // Create estimators
-  	q_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
-  	t_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
-  	q_estimator.predict(state);    //	Initialize them by making predictions
-  	t_estimator.predict(state);
+  	estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
+  	estimator.predict(state);    //	Initialize them by making predictions
   	  	
   	val times = zeros(1,8);
   	val dtimes = zeros(1,7);
@@ -153,15 +149,12 @@ class A3Calgorithm(
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                // update the decayed learning rate
   		val temp = temperatures(istep);                                // get an epsilon for the eps-greedy policy
-  		q_estimator.setConsts3(1/temp, opts.entropy_weight, opts.policygrad_weight);
-  		t_estimator.setConsts3(1/temp, opts.entropy_weight, opts.policygrad_weight);
-
-  		if (istep % targwin== 0) t_estimator.update_from(q_estimator);          // update the target estimator if needed    
+  		estimator.setConsts3(1/temp, opts.entropy_weight, opts.policygrad_weight);
 
   		for (i <- 0 until ndqn) {
   			times(0) = toc;
-  			q_estimator.predict(state); // get the next action probabilities etc from the policy
-  			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
+  			estimator.predict(state); // get the next action probabilities etc from the policy
+  			val (preds, aprobs, _, _) = estimator.getOutputs4;
   			times(1) = toc;
 
   			actions <-- multirnd(aprobs);                                              // Choose actions using the policy 
@@ -202,8 +195,8 @@ class A3Calgorithm(
   			times(4) = toc;
   			dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
   		}
-  		t_estimator.predict(new_state);
-  		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
+  		estimator.predict(new_state);
+  		val (q_next, q_prob, _, _) = estimator.getOutputs4; 
   		val v_next = q_next dot q_prob;
   		times(5) = toc;
 
@@ -216,14 +209,14 @@ class A3Calgorithm(
   		// Now compute gradients for the states/actions/rewards saved in the table.
   		for (i <- 0 until ndqn) {
   			new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar));
-  			q_estimator.gradient(new_state, action_memory(i,?), reward_memory(i,?), npar);
-  			val (_, _, ev, lv) = q_estimator.getOutputs4;
+  			estimator.gradient(new_state, action_memory(i,?), reward_memory(i,?), npar);
+  			val (_, _, ev, lv) = estimator.getOutputs4;
   			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss
   			block_entropy += sum(ev).v; 
   		}
   		times(6) = toc;
 
-  		q_estimator.msprop(lr);                       // apply the gradient update
+  		estimator.msprop(lr);                       // apply the gradient update
   		times(7) = toc;
 
   		dtimes(0,4->7) = dtimes(0,4->7) + (times(0,5->8) - times(0,4->7));
@@ -250,7 +243,6 @@ object A3Calgorithm {
     
     var nsteps = 400000;                             // Number of steps to run (game actions per environment)
   	var ndqn = 5;                                    // Number of DQN steps per update
-  	var target_window = 50;                          // Interval to update target estimator from q-estimator
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
