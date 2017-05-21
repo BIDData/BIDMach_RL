@@ -90,9 +90,9 @@ abstract class Estimator(opts:Estimator.Options = new Estimator.Options) extends
     	}
     }
 
-    def update_estimator(to_estimator:Estimator) = {
+    def update_from(from_estimator:Estimator) = {
     	for (k  <- 0 until net.modelmats.length) {
-    		to_estimator.net.modelmats(k) <-- net.modelmats(k);
+    		net.modelmats(k) <-- from_estimator.net.modelmats(k);
     	}
     }
 };

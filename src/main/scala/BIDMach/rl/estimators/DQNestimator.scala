@@ -37,8 +37,8 @@ class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends
 	  val target =  input;
 	  
 	  // Settable param layers;
-	  invtemp  =    const(1);
-	  entropyw=     const(1);
+	  invtemp  =    const(1f);
+	  entropyw=     const(1f);
 
 	  // Random constants
 	  val minus1 =  const(-1f);

@@ -101,8 +101,8 @@ class A3Calgorithm (
   def train {
     val nsteps = opts.nsteps;
     val nwindow = opts.nwindow;
-    val learning_rates = loginterp(opts.lr_schedule, nsteps);
-    val temperatures = loginterp(opts.temp_schedule, nsteps);
+    val learning_rates = loginterp(opts.lr_schedule, nsteps+1);
+    val temperatures = loginterp(opts.temp_schedule, nsteps+1);
     val ndqn = opts.ndqn;
     val eopts = new A3CestimatorQ.Options;
     eopts.nhidden = opts.nhidden;
@@ -160,7 +160,7 @@ class A3Calgorithm (
   		q_estimator.setConsts(temp, opts.entropy_weight, opts.policygrad_weight);
   		t_estimator.setConsts(temp, opts.entropy_weight, opts.policygrad_weight);
 
-  		if (istep % targwin== 0) q_estimator.update_estimator(t_estimator);          // update the target estimator if needed    
+  		if (istep % targwin== 0) t_estimator.update_from(q_estimator);          // update the target estimator if needed    
 
   		for (i <- 0 until ndqn) {
   			times(0) = toc;
