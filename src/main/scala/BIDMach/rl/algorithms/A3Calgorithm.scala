@@ -135,6 +135,8 @@ class A3Calgorithm (
   	q_estimator.predict(state);    //	Initialize them by making predictions
   	t_estimator.predict(state);
 
+  	println("Got here 0");
+  	  	
   	val times = zeros(1,8);
   	val dtimes = zeros(1,7);
   	val ractions = int(rand(1, npar) * nactions);
@@ -145,13 +147,16 @@ class A3Calgorithm (
   	val rand_actions = ones(nactions, npar) * (1f/nactions);
   	val targwin = opts.target_window / ndqn * ndqn; 
   	val printsteps0 = opts.print_steps / ndqn * ndqn; 
+  	
+  	println("Got here 1");
+  	  	
   	val state_memory = zeros(envs(0).statedims\opts.nwindow\(npar*ndqn));
   	val action_memory = izeros(ndqn\npar);
   	val reward_memory = zeros(ndqn\npar);
   	val done_memory = zeros(ndqn\npar);
   	reward_plot = zeros(1, nsteps/printsteps0);
   	
-  	println("Got here 0");
+  	println("Got here 2");
 
   	tic;
   	for (istep <- ndqn to opts.nsteps by ndqn) {
