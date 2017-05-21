@@ -29,7 +29,7 @@ class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends
     
 	def createNet:Net = {
 	  import BIDMach.networks.layers.Layer._;
-	  Net.initDefault;
+	  Net.initDefault(opts);
 
 	  // Input layers 
 	  val in =      input;

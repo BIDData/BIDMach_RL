@@ -34,7 +34,7 @@ class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) exte
     
 	def createNet:Net = {
 	  import BIDMach.networks.layers.Layer._;
-	  Net.initDefault;
+	  Net.initDefault(opts);
 
 	  // Input layers 
 	  val in =      input;
