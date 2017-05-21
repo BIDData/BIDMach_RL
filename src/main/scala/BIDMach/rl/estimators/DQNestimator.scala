@@ -12,7 +12,7 @@ import jcuda.jcudnn.JCudnn._
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 
-class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends Estimator {
+class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Estimator {
   
   var invtemp:ConstantLayer = null;
   var entropyw:ConstantLayer = null;
@@ -105,4 +105,8 @@ object DQNestimator {
   }
   
   class Options extends Opts {}
+  
+  def build(opts:Estimator.Opts) = {
+    new DQNestimator(opts.asInstanceOf[DQNestimator.Opts])
+  }
 }

@@ -19,7 +19,7 @@ import jcuda.jcudnn.JCudnn._
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 
-class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) extends Estimator {
+class A3CestimatorQ(opts:A3CestimatorQ.Opts = new A3CestimatorQ.Options) extends Estimator {
   
   var invtemp:ConstantLayer = null;
   var entropyw:ConstantLayer = null;
@@ -123,4 +123,8 @@ object A3CestimatorQ {
   }
   
   class Options extends Opts {}
+  
+  def build(opts:Estimator.Opts) = {
+    new A3CestimatorQ(opts.asInstanceOf[A3CestimatorQ.Opts])
+  }
 }

@@ -17,7 +17,8 @@ import java.util.HashMap;
 class A3Calgorithm(
 		val envs:Array[Environment], 
 		val parstepper:(Array[Environment], IMat, Array[FMat], FMat, FMat) => (Array[FMat], FMat, FMat),
-		val opts:A3Calgorithm.Options = new A3Calgorithm.Options
+		val buildEstimator:(Estimator.Opts) => Estimator,
+		val opts:A3Calgorithm.Opts = new A3Calgorithm.Options
 		) extends Algorithm {
   
 	val npar = envs.length;                            // Number of parallel environments 
@@ -125,8 +126,8 @@ class A3Calgorithm(
   	Mat.useCache = false;
     
 // Create estimators
-  	q_estimator = new A3CestimatorQ(opts.asInstanceOf[A3CestimatorQ.Options]);
-  	t_estimator = new A3CestimatorQ(opts.asInstanceOf[A3CestimatorQ.Options]);
+  	q_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
+  	t_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
   	q_estimator.predict(state);    //	Initialize them by making predictions
   	t_estimator.predict(state);
   	  	

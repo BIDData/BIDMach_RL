@@ -17,7 +17,8 @@ import java.util.HashMap;
 class NDQNalgorithm(
 		val envs:Array[Environment], 
 		val parstepper:(Array[Environment], IMat, Array[FMat], FMat, FMat) => (Array[FMat], FMat, FMat),
-		val opts:NDQNalgorithm.Options = new NDQNalgorithm.Options
+		val buildEstimator:(Estimator.Opts) => Estimator,
+		val opts:NDQNalgorithm.Opts = new NDQNalgorithm.Options
 		) extends Algorithm {
   
 	val npar = envs.length;                            // Number of parallel environments 
@@ -126,8 +127,8 @@ class NDQNalgorithm(
   	Mat.useCache = false;
     
 // Create estimators
-  	q_estimator = new DQNestimator(opts.asInstanceOf[DQNestimator.Options]);
-  	t_estimator = new DQNestimator(opts.asInstanceOf[DQNestimator.Options]);
+  	q_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
+  	t_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
   	q_estimator.predict(state);    //	Initialize them by making predictions
   	t_estimator.predict(state);
   	  	
