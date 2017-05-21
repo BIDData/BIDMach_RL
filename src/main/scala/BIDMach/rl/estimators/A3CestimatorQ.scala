@@ -33,7 +33,7 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
   
   override def formatStates(s:FMat) = {
     if (net.opts.tensorFormat == Net.TensorNCHW) {
-    	s.reshapeView(s.dims(2)\s.dims(0)\s.dims(0)\s.dims(3));
+    	s.reshapeView(s.dims(2), s.dims(0), s.dims(1), s.dims(3));
     } else {
     	s.transpose(2\0\1\3);
     }
