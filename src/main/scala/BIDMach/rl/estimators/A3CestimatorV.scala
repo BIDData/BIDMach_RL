@@ -17,8 +17,7 @@ import BIDMach._
 import BIDMach.rl.algorithms._;
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
-import scala.util.hashing.MurmurHash3;
-import java.util.HashMap;
+import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 
 class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) extends Estimator {
@@ -32,6 +31,16 @@ class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) exte
   var entropy:Layer = null;
   var loss:Layer = null;
   var nentropy = 0;
+  
+  override def formatStates(s:FMat) = {
+    if (net.opts.tensorFormat == Net.TensorNCHW) {
+    	s.reshapeView(s.dims(2), s.dims(0), s.dims(1), s.dims(3));
+    } else {
+    	val x = s.transpose(2\0\1\3);
+    	x.setGUID(MurmurHash3_x64_64(Array(s.GUID), "transpose213".##));
+    	x;
+    }
+  }
     
 	def createNet:Net = {
 	  import BIDMach.networks.layers.Layer._;
@@ -85,16 +94,18 @@ class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) exte
 
 	  Net.getDefaultNet;
   }
+	
+  override val net = createNet;
 
 	// Set temperature and entropy weight
-  def setConsts(temperature:Float, entropyWeight:Float, gradWeight:Float) = {
+  override def setConsts3(temperature:Float, entropyWeight:Float, gradWeight:Float) = {
 	  invtemp.opts.value =  1f/temperature;
 	  entropyw.opts.value = entropyWeight;
 	  gradw.opts.value =    gradWeight;
   }
   
   // Get the Q-predictions, action probabilities, entropy and loss for the last forward pass. 
-  def getOutputs:(FMat,FMat,FMat,FMat) = {
+  override def getOutputs4:(FMat,FMat,FMat,FMat) = {
     (FMat(vpreds.output),
      FMat(probs.output),
      FMat(entropy.output),
@@ -104,10 +115,12 @@ class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) exte
 };
 
 object A3CestimatorV {
-  class Options extends A3Calgorithm.Options {
+  trait Opts extends Estimator.Opts {
     var nhidden = 16;
     var nhidden2 = 32;
     var nhidden3 = 256;
     var nactions = 3;
   }
+  
+  class Options extends Opts {}
 }
