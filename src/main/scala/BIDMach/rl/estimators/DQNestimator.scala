@@ -37,12 +37,12 @@ class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends
 	  val target =  input;
 	  
 	  // Settable param layers;
-	  invtemp  =    constant(1);
-	  entropyw=     constant(1);
+	  invtemp  =    const(1);
+	  entropyw=     const(1);
 
 	  // Random constants
-	  val minus1 =  constant(-1f);
-	  val eps =     constant(1e-6f);
+	  val minus1 =  const(-1f);
+	  val eps =     const(1e-6f);
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,initv=1f,convType=opts.convType);
