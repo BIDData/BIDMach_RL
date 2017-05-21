@@ -9,6 +9,7 @@ import BIDMach.rl.algorithms._
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
 import BIDMach.networks._
+import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 
 class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends Estimator {
@@ -21,6 +22,16 @@ class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends
   var entropy:Layer = null;
   var loss:Layer = null;
   var nentropy = 0;
+  
+  override def formatStates(s:FMat) = {
+    if (net.opts.tensorFormat == Net.TensorNCHW) {
+    	s.reshapeView(s.dims(2), s.dims(0), s.dims(1), s.dims(3));
+    } else {
+    	val x = s.transpose(2\0\1\3);
+    	x.setGUID(MurmurHash3_x64_64(Array(s.GUID), "transpose213".##));
+    	x;
+    }
+  }
     
 	def createNet:Net = {
 	  import BIDMach.networks.layers.Layer._;
