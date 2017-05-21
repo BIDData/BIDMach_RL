@@ -17,12 +17,21 @@ class AtariEnvironment(override val opts:AtariEnvironment.Options = new AtariEnv
   val ale:ALE = new ALE;
   ale.setInt("random_seed", opts.random_seed);
   ale.loadROM(opts.rom_dir + opts.rom_name);
-  ale.setFloat("repeat_action_probability", opts.repeat_action_probability);
-  ale.frameskip = (opts.frameskip(0), opts.frameskip(1));
-  ale.mode = opts.mode;
-  ale.shrink = opts.shrink;
-  ale.pool = opts.pool;
-  ale.background = opts.background;
+  
+  def copyOpts = {
+  		ale.setFloat("repeat_action_probability", opts.repeat_action_probability);
+  		ale.frameskip = (opts.frameskip(0), opts.frameskip(1));
+  		ale.mode = opts.mode;
+  		ale.shrink = opts.shrink;
+  		ale.pool = opts.pool;
+  		ale.background = opts.background;
+  		ale.xoff = opts.xoff;
+  		ale.yoff = opts.yoff;
+  		ale.width = opts.width;
+  		ale.height = opts.height;
+  }
+  
+  copyOpts;
   
   override val VALID_ACTIONS = IMat.make(ale.getMinimalActionSet);
   
@@ -42,6 +51,10 @@ object AtariEnvironment {
     ALE.stepAll(envs.map(_.asInstanceOf[AtariEnvironment].ale), actions, obs0, rewards0, dones0);
   }
   
+  def stepAll(envs:Array[Environment], actions:IMat):(Array[FMat], FMat, FMat) = {
+    ALE.stepAll(envs.map(_.asInstanceOf[AtariEnvironment].ale), actions);
+  }
+  
   class Options extends Environment.Options {
 
     var random_seed = 0;
@@ -50,14 +63,13 @@ object AtariEnvironment {
     var rom_dir = "/code/ALE/roms/"
     var rom_name = "Pong.bin";
     var score_range = row(-1f,1f);
-    var mode = 3;
-    var xoff = 0;
-    var yoff = 17;
-    var width = 80;
-    var height = 80;
+    var mode = 1;
     var shrink = true;
     var pool = true;
     var background = 34;
-    
+    var xoff = 0;
+    var yoff = 17;
+    var width = 80;
+    var height = 80;    
   }
 }

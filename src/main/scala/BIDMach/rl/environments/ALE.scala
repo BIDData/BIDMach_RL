@@ -8,9 +8,10 @@ class ALE extends edu.berkeley.bid.ALE {
 	var dims:Array[Int] = null;
   var buffer:Array[Byte] = null;
   var buffer2:Array[Byte] = null;
+  var colormap:Array[Float] = null
   val rg = new Random();
   var frameskip = (2, 5);
-  var mode = 0;           // 0 = Raw, 1 = Grayscale, 2 = RGB, 3 = binarize
+  var mode = 1;           // 0 = Raw, 1 = Grayscale, 2 = RGB, 3 = binarize, 4 = colormap
   var pool = true;      
   var shrink = true;
   var background = 0;
@@ -25,6 +26,7 @@ class ALE extends edu.berkeley.bid.ALE {
     case 1 => if (pool) getScreenRGB(buffer) else getScreenGrayscale(buffer);
     case 2 => getScreenRGB(buffer);
     case 3 => getScreenData(buffer);
+    case 4 => getScreenData(buffer);
     }
     buffer0;
   };
@@ -54,6 +56,20 @@ class ALE extends edu.berkeley.bid.ALE {
         }
       }
     }
+  }
+  
+  // The Standard Grayscale Palette gives very low constrast on many games. This map converts color angle into the output value.
+  
+  def createColorMap:Array[Float] = {
+    colormap = new Array[Float](256);
+    val palette = getScreenPaletteRGB(null);
+    for (i <- 0 until 256) {
+      val r = palette(i*3) & 0xff;
+      val g = palette(i*3+1) & 0xff;
+      val b = palette(i*3+2) & 0xff;
+      colormap(i) = cmap(r,g,b);
+    }
+    colormap;
   }
 
   def copyObs(out0:FMat):FMat = {
@@ -133,6 +149,22 @@ class ALE extends edu.berkeley.bid.ALE {
 				  		i += 1;
 				  	}	
 				  }
+				  case 4 => {                                // Pool and shrink a colormapped image
+				  	val cc = 1f/4;
+				  	while (i < height*2) {
+				  		val irow = (i + yoff) * inwidth;
+				  		val irow2 = (i >> 1) * width;
+				  		var j = 0;
+				  		while (j < width*2) {
+				  			val ii = irow + j + xoff;
+				  			val jj = irow2 + (j >> 1);
+				  			val r = math.max(colormap(buffer(ii) & 0xff), colormap(buffer2(ii) & 0xff));
+				  			odata(jj) += r*cc;
+				  			j += 1;					
+				  		}
+				  		i += 1;
+				  	}	
+				  }
 				}
 		  } else {                                       // Pooling without shrinking
 		    mode match {
@@ -185,6 +217,20 @@ class ALE extends edu.berkeley.bid.ALE {
 		      			val ii = irow + j + xoff;
 		      			val jj = irow2 + j;
 		      			odata(jj) = if ((buffer(ii) & 0xff) != background || (buffer2(ii) & 0xff) != background) 1f else 0f;
+		      			j += 1;					
+		      		}
+		      		i += 1;
+		        }
+		      }
+		      case 4 => {                                // Pool a colormapped image
+		        while (i < height) {
+		      		val irow = (i + yoff) * inwidth;
+		      		val irow2 = i * width;
+		      		var j = 0;
+		      		while (j < width) {
+		      			val ii = irow + j + xoff;
+		      			val jj = irow2 + j;
+		      			odata(jj) = math.max(colormap(buffer(ii) & 0xff), colormap(buffer2(ii) & 0xff));
 		      			j += 1;					
 		      		}
 		      		i += 1;
@@ -261,6 +307,23 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		i += 1;
 		      	}		
 		      }
+		      case 4 => {                                // Shrink a colormapped image
+		      	out.clear;
+		      	val cc = 1f/4;
+		      	while (i < height*2) {
+		      		val irow = (i + yoff) * inwidth;
+		      		val irow2 = (i >> 1) * width;
+		      		var j = 0;
+		      		while (j < width*2) {
+		      			val ii = irow + j + xoff;
+		      			val jj = irow2 + (j >> 1);
+		      			val r = colormap(buffer(ii) & 0xff) * cc;
+		      			odata(jj) += r;
+		      			j += 1;					
+		      		}
+		      		i += 1;
+		      	}		
+		      }
 		    }
 		  } else {                                           // No pooling, no shrinking
 		    mode match {
@@ -320,6 +383,20 @@ class ALE extends edu.berkeley.bid.ALE {
 		      			val ii = irow + j + xoff;
 		      			val jj = irow2 + j;
 		      			odata(jj) = if ((buffer(ii) & 0xff) != background) 1f else 0f;
+		      			j += 1;					
+		      		}
+		      		i += 1;
+		      	}		 		        
+		      }
+		      case 4 => {                                    // Copy a colormapped image
+		         while (i < height) {
+		      		val irow = (i + yoff) * inwidth;
+		      		val irow2 = i * width;
+		      		var j = 0;
+		      		while (j < width) {
+		      			val ii = irow + j + xoff;
+		      			val jj = irow2 + j;
+		      			odata(jj) = colormap(buffer(ii) & 0xff);
 		      			j += 1;					
 		      		}
 		      		i += 1;
