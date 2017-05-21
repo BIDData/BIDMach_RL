@@ -476,9 +476,9 @@ object ALE {
 		(0 until npar).par.foreach((i) => {
 			val nsteps = envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
 			var reward = 0f;
-			for (i <- 0 until nsteps) {
+			for (j <- 0 until nsteps) {
 			  reward += envs(i).act(actions(i));
-			  if (envs(i).pool & i == nsteps-2) envs(i).buffer2 = envs(i).getBufferData(envs(i).buffer2);
+			  if (envs(i).pool & j == nsteps-2) envs(i).buffer2 = envs(i).getBufferData(envs(i).buffer2);
 			}
 			rewards(i) = reward;
 			envs(i).buffer = envs(i).getBufferData(envs(i).buffer);
