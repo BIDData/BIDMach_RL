@@ -96,6 +96,12 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     		net.modelmats(k) <-- from_estimator.net.modelmats(k);
     	}
     }
+    
+    def setConsts2(a:Float, b:Float) = {}
+    
+    def setConsts3(a:Float, b:Float, c:Float) = {}
+    
+    def getOutputs4:(FMat,FMat,FMat,FMat) = {(zeros(1,1), zeros(1,1), zeros(1,1), zeros(1,1))}
 };
 
 object Estimator {

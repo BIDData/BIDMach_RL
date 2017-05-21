@@ -14,10 +14,10 @@ import jcuda.jcudnn.JCudnn._
 import scala.util.hashing.MurmurHash3;
 import java.util.HashMap;
 
-class A3Calgorithm(
+class NDQNalgorithm(
 		val envs:Array[Environment], 
 		val parstepper:(Array[Environment], IMat, Array[FMat], FMat, FMat) => (Array[FMat], FMat, FMat),
-		val opts:A3Calgorithm.Options = new A3Calgorithm.Options
+		val opts:NDQNalgorithm.Options = new NDQNalgorithm.Options
 		) extends Algorithm {
   
 	val npar = envs.length;                            // Number of parallel environments 
@@ -103,6 +103,7 @@ class A3Calgorithm(
     val nwindow = opts.nwindow;
     val learning_rates = loginterp(opts.lr_schedule, nsteps+1);
     val temperatures = loginterp(opts.temp_schedule, nsteps+1);
+    val epsilons = loginterp(opts.eps_schedule, nsteps+1);
     val ndqn = opts.ndqn;
     
     total_steps = 0;
@@ -125,8 +126,8 @@ class A3Calgorithm(
   	Mat.useCache = false;
     
 // Create estimators
-  	q_estimator = new A3CestimatorQ(opts.asInstanceOf[A3CestimatorQ.Options]);
-  	t_estimator = new A3CestimatorQ(opts.asInstanceOf[A3CestimatorQ.Options]);
+  	q_estimator = new DQNestimator(opts.asInstanceOf[DQNestimator.Options]);
+  	t_estimator = new DQNestimator(opts.asInstanceOf[DQNestimator.Options]);
   	q_estimator.predict(state);    //	Initialize them by making predictions
   	t_estimator.predict(state);
   	  	
@@ -150,12 +151,14 @@ class A3Calgorithm(
   	tic;
   	for (istep <- ndqn to opts.nsteps by ndqn) {
 //    if (render): envs[0].render()
-  		val lr = learning_rates(istep);                                // update the decayed learning rate
-  		val temp = temperatures(istep);                                // get an epsilon for the eps-greedy policy
-  		q_estimator.setConsts3(1/temp, opts.entropy_weight, opts.policygrad_weight);
-  		t_estimator.setConsts3(1/temp, opts.entropy_weight, opts.policygrad_weight);
+  		val lr = learning_rates(istep);                                          // Update the decayed learning rate
+  		val temp = temperatures(istep);                                          // Current temperature 
+  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
+  		
+  		q_estimator.setConsts2(1/temp, opts.entropy_weight);
+  		t_estimator.setConsts2(1/temp, opts.entropy_weight);
 
-  		if (istep % targwin== 0) t_estimator.update_from(q_estimator);          // update the target estimator if needed    
+  		if (istep % targwin== 0) t_estimator.update_from(q_estimator);           // Update the target estimator if needed    
 
   		for (i <- 0 until ndqn) {
   			times(0) = toc;
@@ -163,12 +166,14 @@ class A3Calgorithm(
   			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
   			times(1) = toc;
 
-  			actions <-- multirnd(aprobs);                                              // Choose actions using the policy 
+  			val doeps = rand(1,npar) < epsilon;                                    // Do an epsilon-greedy action
+  			val probs = doeps *@ rand_actions + (1-doeps) *@ aprobs;
+  			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
   			times(2) = toc;
 
-  			for (j <- 0 until npar) {                                                                                                    // process the observation
-  				new_state(?,?,0->(nwindow-1),j) = state(?,?,1->nwindow,j);              // shift the image stack and add a new image
+  			for (j <- 0 until npar) {                                              // process the observation
+  				new_state(?,?,0->(nwindow-1),j) = state(?,?,1->nwindow,j);           // shift the image stack and add a new image
   				new_state(?,?,nwindow-1,j) = obs(j);         
   				if (j == 0) {
   					saved_frames(?,?,igame) = obs(0).reshapeView(envs(0).statedims\1);
@@ -204,7 +209,7 @@ class A3Calgorithm(
   		}
   		t_estimator.predict(new_state);
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
-  		val v_next = q_next dot q_prob;
+  		val v_next = maxi(q_next);
   		times(5) = toc;
 
   		reward_memory(ndqn-1,?) = done_memory(ndqn-1,?) *@ reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
@@ -245,7 +250,7 @@ class A3Calgorithm(
   }
 }
 
-object A3Calgorithm {
+object NDQNalgorithm {
   class Options extends Algorithm.Options {
     
     var nsteps = 400000;                             // Number of steps to run (game actions per environment)
@@ -257,11 +262,11 @@ object A3Calgorithm {
   	var save_length = 10000;
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
-  	var policygrad_weight = 0.3f;                    // Weight of policy gradient compared to regression loss
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
   	var baseline_decay = 0.9999f;                    // Reward baseline decay
   	
   	var lr_schedule = (0f \ 3e-6f on 1f \ 3e-6f);    // Learning rate schedule
+  	var eps_schedule = (0f \ 0.3f on 1f \ 0.1f);     // Epsilon schedule
   	var temp_schedule = (0f \ 1f on 1f \ 1f);        // Temperature schedule
 
   }

@@ -1,47 +1,28 @@
 package BIDMach.rl.estimators
 
-//
-// A Q-Critic Estimator for A3C. 
-// First input is the current state. 
-// Second input is the action taken by the policy. 
-// Third input is the target value of the next state (after the action was applied). 
-//
-
 import BIDMat.{Mat,SBMat,CMat,DMat,FMat,IMat,LMat,HMat,GMat,GDMat,GIMat,GLMat,GSMat,GSDMat,SMat,SDMat}
 import BIDMat.MatFunctions._
 import BIDMat.SciFunctions._
 import BIDMach.networks.layers._;
-import BIDMach.networks._
 import BIDMach._
 import BIDMach.rl.algorithms._
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
-import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
+import BIDMach.networks._
 
 
-class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) extends Estimator {
+class DQNestimator(opts:DQNestimator.Options = new DQNestimator.Options) extends Estimator {
   
   var invtemp:ConstantLayer = null;
   var entropyw:ConstantLayer = null;
-  var gradw:ConstantLayer = null;
   
   var preds:Layer = null;
   var probs:Layer = null;
   var entropy:Layer = null;
   var loss:Layer = null;
   var nentropy = 0;
-  
-  override def formatStates(s:FMat) = {
-    if (net.opts.tensorFormat == Net.TensorNCHW) {
-    	s.reshapeView(s.dims(2), s.dims(0), s.dims(1), s.dims(3));
-    } else {
-    	val x = s.transpose(2\0\1\3);
-    	x.setGUID(MurmurHash3_x64_64(Array(s.GUID), "transpose213".##));
-    	x;
-    }
-  }
     
-	def createNet = {
+	def createNet:Net = {
 	  import BIDMach.networks.layers.Layer._;
 	  Net.initDefault(opts);
 
@@ -52,8 +33,7 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
 	  
 	  // Settable param layers;
 	  invtemp  =    const(1f);
-	  entropyw =    const(1f);
-	  gradw =       const(1f);
+	  entropyw=     const(1f);
 
 	  // Random constants
 	  val minus1 =  const(-1f);
@@ -67,40 +47,30 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
 
 	  // FC/reward prediction layers
 	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,initv=2e-2f);
-	  val relu3 =   relu(fc3); 
-	  val ppreds =  linear(relu3)(outdim=opts.nactions,initv=5e-2f);
-	  preds =       linear(relu3)(outdim=opts.nactions,initv=5e-2f);
+	  val relu3 =   relu(fc3);
+	  preds =       linear(relu3)(outdim=opts.nactions,initv=5e-2f); 
 
-	  // Probability layers
-	  probs =       softmax(ppreds *@ invtemp); 
+	  // Probabilitylayers
+	  probs =       softmax(preds *@ invtemp); 
 
 	  // Entropy layers
-	  val logprobs= ln(probs + eps);
-	  entropy =     (logprobs dot probs) *@ minus1;
+	  entropy =     (ln(probs + eps) dot probs) *@ minus1;
 	  nentropy =    Net.defaultLayerList.length;
 
 	  // Action loss layers
 	  val diff =    target - preds(actions);
-	  loss =        diff *@ diff;     
-	  
-	  // Policy gradient
-	  val values =  probs dot preds;
-	  val advtg =   target - values;
-	  val pgrad =   logprobs(actions) *@ forward(advtg);
+	  loss =        diff *@ diff;                     // Index of base loss layer.
 
 	  // Total weighted negloss, maximize this
-	  val out =     loss *@ minus1 + pgrad *@ gradw + entropy *@ entropyw;
+	  val out =     loss *@ minus1 + entropy *@ entropyw;
 
 	  Net.getDefaultNet;
   }
 
-	override val net = createNet;
-	
 	// Set temperature and entropy weight
-  override def setConsts3(invtempv:Float, entropyWeight:Float, gradWeight:Float) = {
-	  invtemp.opts.value.set(invtempv);
-	  entropyw.opts.value.set(entropyWeight);
-	  gradw.opts.value.set(gradWeight);
+  override def setConsts2(invtemperature:Float, entropyWeight:Float) = {
+	  invtemp.opts.value =  invtemperature;
+	  entropyw.opts.value =  entropyWeight;
   }
   
   // Get the Q-predictions, action probabilities, entropy and loss for the last forward pass. 
@@ -113,12 +83,11 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
   }
 };
 
-object A3CestimatorQ {
-  class Options extends A3Calgorithm.Options {
+object DQNestimator {
+  class Options extends NDQNalgorithm.Options {
     var nhidden = 16;
     var nhidden2 = 32;
     var nhidden3 = 256;
     var nactions = 3;
-    tensorFormat = Net.TensorNCHW;
   }
 }
