@@ -167,7 +167,8 @@ class NDQNalgorithm(
   			times(1) = toc;
 
   			val doeps = rand(1,npar) < epsilon;                                    // Do an epsilon-greedy action
-  			val probs = doeps *@ rand_actions + (1-doeps) *@ aprobs;
+  			val bestprobs = (aprobs == maxi(aprobs));                                // Deterministically pick the best action
+  			val probs = doeps *@ rand_actions + (1-doeps) *@ (bestprobs / sum(bestprobs)); // Blend with epsilon-greedy
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
   			times(2) = toc;
