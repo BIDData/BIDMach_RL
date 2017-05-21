@@ -55,7 +55,7 @@ class A3Calgorithm (
 	  block_reward = 0f;
 	  block_count = 0;
 	  total_epochs = 0;
-	  VALID_ACTIONS = IMat.make(envs(0).VALID_ACTIONS);
+	  VALID_ACTIONS = envs(0).VALID_ACTIONS;
 	  nactions = VALID_ACTIONS.length;
 	  val nwindow = opts.nwindow;
 	  state = zeros(envs(0).statedims\nwindow\npar);
