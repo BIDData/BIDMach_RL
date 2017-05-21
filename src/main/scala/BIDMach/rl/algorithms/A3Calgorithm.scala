@@ -134,8 +134,7 @@ class A3Calgorithm(
  
   	var actions = izeros(1,npar);
   	var action_probs:FMat = null;
-  	val rand_actions = ones(nactions, npar) * (1f/nactions);
-  	val targwin = opts.target_window / ndqn * ndqn; 
+  	val rand_actions = ones(nactions, npar) * (1f/nactions); 
   	val printsteps0 = opts.print_steps / ndqn * ndqn; 
   	  	
   	val state_memory = zeros(envs(0).statedims\opts.nwindow\(npar*ndqn));
