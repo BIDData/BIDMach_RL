@@ -150,6 +150,8 @@ class A3Calgorithm (
   	val reward_memory = zeros(ndqn\npar);
   	val done_memory = zeros(ndqn\npar);
   	reward_plot = zeros(1, nsteps/printsteps0);
+  	
+  	println("Got here 0");
 
   	tic;
   	for (istep <- ndqn to opts.nsteps by ndqn) {
