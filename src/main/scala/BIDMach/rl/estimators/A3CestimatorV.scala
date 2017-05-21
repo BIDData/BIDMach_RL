@@ -98,8 +98,8 @@ class A3CestimatorV(opts:A3CestimatorV.Options = new A3CestimatorV.Options) exte
   override val net = createNet;
 
 	// Set temperature and entropy weight
-  override def setConsts3(temperature:Float, entropyWeight:Float, gradWeight:Float) = {
-	  invtemp.opts.value =  1f/temperature;
+  override def setConsts3(invtemperature:Float, entropyWeight:Float, gradWeight:Float) = {
+	  invtemp.opts.value =  invtemperature;
 	  entropyw.opts.value = entropyWeight;
 	  gradw.opts.value =    gradWeight;
   }
