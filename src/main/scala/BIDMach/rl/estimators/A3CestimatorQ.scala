@@ -39,7 +39,7 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
     }
   }
     
-	def createNet:Net = {
+	def createNet = {
 	  import BIDMach.networks.layers.Layer._;
 	  Net.initDefault;
 
@@ -92,6 +92,8 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
 	  Net.getDefaultNet;
   }
 
+	override val net = createNet;
+	
 	// Set temperature and entropy weight
   def setConsts(temperature:Float, entropyWeight:Float, gradWeight:Float) = {
 	  invtemp.opts.value =  1f/temperature;

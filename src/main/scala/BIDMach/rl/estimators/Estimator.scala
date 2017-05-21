@@ -20,8 +20,9 @@ abstract class Estimator(opts:Estimator.Options = new Estimator.Options) extends
     def createNet:Net;
     
     def formatStates(states:FMat):FMat = {states}
-    	
-    val net = createNet;
+    
+    val net:Net = null;
+    
     val adagrad = new ADAGrad(opts);
     
 /** Perform the initialization that is normally done by the Learner */
