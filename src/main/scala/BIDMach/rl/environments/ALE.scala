@@ -480,7 +480,7 @@ object ALE {
 			  reward += envs(i).act(actions(i));
 			  if (envs(i).pool & i == nsteps-2) envs(i).buffer2 = envs(i).getBufferData(envs(i).buffer2);
 			}
-			rewards(i) = rewards;
+			rewards(i) = reward;
 			envs(i).buffer = envs(i).getBufferData(envs(i).buffer);
 			obs(i) = envs(i).copyObs(obs(i));
 			dones(i) = if (envs(i).game_over()) 1f else 0f;
