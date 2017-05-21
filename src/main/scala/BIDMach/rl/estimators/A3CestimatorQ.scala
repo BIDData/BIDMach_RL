@@ -96,9 +96,9 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
 	
 	// Set temperature and entropy weight
   def setConsts(temperature:Float, entropyWeight:Float, gradWeight:Float) = {
-	  invtemp.opts.value =  FMat(1f/temperature);
-	  entropyw.opts.value = FMat(entropyWeight);
-	  gradw.opts.value =    FMat(gradWeight);
+	  invtemp.opts.value.set(1f/temperature);
+	  entropyw.opts.value.set(entropyWeight);
+	  gradw.opts.value.set(gradWeight);
   }
   
   // Get the Q-predictions, action probabilities, entropy and loss for the last forward pass. 
