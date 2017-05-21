@@ -51,9 +51,9 @@ class A3CestimatorQ(opts:A3CestimatorQ.Options = new A3CestimatorQ.Options) exte
 	  val target =  input;
 	  
 	  // Settable param layers;
-	  invtemp  =    const(1);
-	  entropyw =    const(1);
-	  gradw =       const(1);
+	  invtemp  =    const(1f);
+	  entropyw =    const(1f);
+	  gradw =       const(1f);
 
 	  // Random constants
 	  val minus1 =  const(-1f);
