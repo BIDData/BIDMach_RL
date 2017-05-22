@@ -57,6 +57,37 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	net.assignTargets(net.gmats, 0, 0);
     }
     
+    def checkinit4(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat) = {
+    	if (net.mats.asInstanceOf[AnyRef] == null) {
+    		net.mats = new Array[Mat](4);
+    		net.gmats = new Array[Mat](4);
+    	}
+    	net.mats(0) = states;
+    	if (net.mats(1).asInstanceOf[AnyRef] == null) {
+    		net.mats(1) = izeros(1, states.ncols);              // Dummy action vector
+    		net.mats(2) = zeros(1, states.ncols);               // Dummy reward vector
+    		net.mats(3) = zeros(1, states.ncols);
+    	}
+    	if (actions.asInstanceOf[AnyRef] != null) {
+    		net.mats(1) <-- actions;
+    	}
+    	if (rewards.asInstanceOf[AnyRef] != null) {
+    		net.mats(2) <-- rewards;
+    	}
+    	if (rewards2.asInstanceOf[AnyRef] != null) {
+    		net.mats(3) <-- rewards2;
+    	}
+    	if (!initialized) {
+    		net.useGPU = (opts.useGPU && Mat.hasCUDA > 0);
+    		net.init();
+    		adagrad.init(net);
+    		initialized = true;
+    	}
+    	net.copyMats(net.mats, net.gmats);
+    	net.assignInputs(net.gmats, 0, 0);
+    	net.assignTargets(net.gmats, 0, 0);
+    }
+    
 /**  Run the model forward given a state as input up to the action prediction layer. 
      Action selection/scoring layers are not updated.
      returns action predictions */
@@ -71,13 +102,30 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     and then backward to compute gradients.
     An action vector and reward vector must be given. */  
 
-    def gradient(states:FMat, actions:IMat, rewards:FMat, ndout:Int=0) = {
+    def gradient(states:FMat, actions:IMat, rewards:FMat, ndout:Int=0):Unit = {
       val ndout0 = if (ndout == 0) states.ncols else ndout;
     	val fstates = formatStates(states);
     	checkinit(fstates, actions, rewards);
     	net.forward;
     	net.setderiv(ndout0);
     	net.backward(0, 0);
+    }
+    
+    def gradient(states:FMat, actions:IMat, rewards:FMat):Unit = {
+      gradient(states, actions, rewards, 0);
+    }
+    
+    def gradient4(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat, ndout:Int=0):Unit = {
+      val ndout0 = if (ndout == 0) states.ncols else ndout;
+    	val fstates = formatStates(states);
+    	checkinit4(fstates, actions, rewards, rewards2);
+    	net.forward;
+    	net.setderiv(ndout0);
+    	net.backward(0, 0);
+    }
+    
+    def gradient(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat):Unit = {
+      gradient4(states, actions, rewards, rewards2, 0);
     }
 
         
