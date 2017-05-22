@@ -28,8 +28,7 @@ opts.eps_schedule = (0f \ 0.2f on
 		     0.9f \ 0.0001f on
                      1f \ 0.0001f);
 
-opts.temp_schedule = (0f \ 0.01f on 
-		      0.8f \ 0.01f on 
+opts.temp_schedule = (0f \ 0.001f on 
 		      0.9f \ 0.001f on
 		      0.9f \ 0.0001f on
                       1f \ 0.0001f);
