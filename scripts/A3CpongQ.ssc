@@ -3,7 +3,7 @@ import jcuda.jcudnn.cudnnConvolutionMode._;
 
 val npar = 16;                                  // Number of parallel environments
 
-class ModelOpts extends A3Calgorithm.Options with A3CestimatorV.Opts;
+class ModelOpts extends A3CalgorithmQ.Options with A3CestimatorQ.Opts;
 
 val opts = new ModelOpts;                      // Model options
 opts.nsteps = 400000;                          // Number of steps to run (game actions per environment)
@@ -59,7 +59,7 @@ for (i <- 0 until npar) {
     envs(i) = new AtariEnvironment(envopts);
 };
 
-val model = new A3Calgorithm(envs, AtariEnvironment.stepAll, A3CestimatorV.build, opts);
+val model = new A3CalgorithmQ(envs, AtariEnvironment.stepAll, A3CestimatorQ.build, opts);
 
 model.startup;
 
