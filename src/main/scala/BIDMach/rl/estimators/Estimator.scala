@@ -30,7 +30,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
 
     var initialized = false;
     
-    def checkinit(states:FMat, actions:IMat, rewards:FMat) = {
+    def checkinit(states:FMat, actions:IMat, rewards:FMat):Unit = {
     	if (net.mats.asInstanceOf[AnyRef] == null) {
     		net.mats = new Array[Mat](3);
     		net.gmats = new Array[Mat](3);
@@ -57,7 +57,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	net.assignTargets(net.gmats, 0, 0);
     }
     
-    def checkinit4(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat) = {
+    def checkinit(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat):Unit = {
     	if (net.mats.asInstanceOf[AnyRef] == null) {
     		net.mats = new Array[Mat](4);
     		net.gmats = new Array[Mat](4);
@@ -97,6 +97,13 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	val nlayers0 = if (nlayers > 0) nlayers else (net.layers.length-1);
     	for (i <- 0 to nlayers0) net.layers(i).forward;
     }
+    
+    def predict4(states:FMat, nlayers:Int = 0) = {
+    	val fstates = formatStates(states);
+    	checkinit(fstates, null, null, null);
+    	val nlayers0 = if (nlayers > 0) nlayers else (net.layers.length-1);
+    	for (i <- 0 to nlayers0) net.layers(i).forward;
+    }
 
 /** Run the model all the way forward to the squared loss output layer, 
     and then backward to compute gradients.
@@ -118,7 +125,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     def gradient4(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat, ndout:Int=0):Unit = {
       val ndout0 = if (ndout == 0) states.ncols else ndout;
     	val fstates = formatStates(states);
-    	checkinit4(fstates, actions, rewards, rewards2);
+    	checkinit(fstates, actions, rewards, rewards2);
     	net.forward;
     	net.setderiv(ndout0);
     	net.backward(0, 0);

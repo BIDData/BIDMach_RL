@@ -125,7 +125,7 @@ class A3Calgorithm2(
     
 // Create estimators
   	estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
-  	estimator.predict(state);    //	Initialize them by making predictions
+  	estimator.predict4(state);    //	Initialize them by making predictions
   	  	
   	val times = zeros(1,8);
   	val dtimes = zeros(1,7);
@@ -154,7 +154,7 @@ class A3Calgorithm2(
   		done_memory(0,?) = done_memory(ndqn,?);
   		for (i <- 0 until ndqn) {
   			times(0) = toc;
-  			estimator.predict(state); // get the next action probabilities etc from the policy
+  			estimator.predict4(state); // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = estimator.getOutputs4;
   			times(1) = toc;
 
@@ -200,7 +200,7 @@ class A3Calgorithm2(
   			times(4) = toc;
   			dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
   		}
-  		estimator.predict(new_state);
+  		estimator.predict4(new_state);
   		val (v_next, _, _, _) = estimator.getOutputs4; 
   		times(5) = toc;
 
