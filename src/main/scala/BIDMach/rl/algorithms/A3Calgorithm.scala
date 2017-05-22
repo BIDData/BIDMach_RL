@@ -63,7 +63,7 @@ class A3Calgorithm(
 	  save_length = opts.save_length;
 	  saved_frames = zeros(envs(0).statedims\save_length);
 	  saved_actions = izeros(1,save_length);
-	  saved_preds = zeros(nactions\save_length);
+	  saved_preds = zeros(1,save_length);
 	  
 	  print("Initializing Environments")
 	  for (i <- 0 until npar) {
@@ -125,7 +125,7 @@ class A3Calgorithm(
     
 // Create estimators
   	estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
-  	estimator.predict(state);    //	Initialize them by making predictions
+  	estimator.predict4(state);    //	Initialize them by making predictions
   	  	
   	val times = zeros(1,8);
   	val dtimes = zeros(1,7);
@@ -137,10 +137,10 @@ class A3Calgorithm(
   	val rand_actions = ones(nactions, npar) * (1f/nactions); 
   	val printsteps0 = opts.print_steps / ndqn * ndqn; 
   	  	
-  	val state_memory = zeros(envs(0).statedims\opts.nwindow\(npar*ndqn));
-  	val action_memory = izeros(ndqn\npar);
-  	val reward_memory = zeros(ndqn\npar);
-  	val done_memory = zeros(ndqn\npar);
+  	val state_memory = zeros(envs(0).statedims\(opts.nwindow+ndqn-1)\npar);
+  	val action_memory = izeros(ndqn, npar);
+  	val reward_memory = zeros(ndqn+1, npar);
+  	val done_memory = zeros(ndqn+1, npar);
   	reward_plot = zeros(1, nsteps/printsteps0);
 
   	tic;
@@ -149,10 +149,12 @@ class A3Calgorithm(
   		val lr = learning_rates(istep);                                // update the decayed learning rate
   		val temp = temperatures(istep);                                // get an epsilon for the eps-greedy policy
   		estimator.setConsts3(1/temp, opts.entropy_weight, opts.policygrad_weight);
-
+  		
+  		reward_memory(0,?) = reward_memory(ndqn,?);
+  		done_memory(0,?) = done_memory(ndqn,?);
   		for (i <- 0 until ndqn) {
   			times(0) = toc;
-  			estimator.predict(state); // get the next action probabilities etc from the policy
+  			estimator.predict4(state); // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = estimator.getOutputs4;
   			times(1) = toc;
 
@@ -166,7 +168,7 @@ class A3Calgorithm(
   			}
   			saved_frames(?,?,igame) = obs(0).reshapeView(envs(0).statedims\1);
   			saved_actions(0,igame) = actions(0);
-  			saved_preds(?,igame) = preds(?,0);
+  			saved_preds(0,igame) = preds(0);
   			igame = (igame+1) % save_length;
   			
   			total_epochs += sum(dones).v.toInt;
@@ -186,29 +188,32 @@ class A3Calgorithm(
   			} else {
   				rewards;
   			}
-  			state_memory(?,?,?,(i*npar)->((i+1)*npar)) = state;
+  			if (i == 0) {
+  			  state_memory(?,?,0->nwindow,?) = state;
+  			} else {
+  			  state_memory(?,?,nwindow+i-1,?) = state(?,?,nwindow-1,?);
+  			}
   			action_memory(i,?) = actions;
-  			reward_memory(i,?) = arewards;
-  			done_memory(i,?) = dones;
+  			reward_memory(i+1,?) = arewards;
+  			done_memory(i+1,?) = dones;
   			state <-- new_state;
   			times(4) = toc;
   			dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
   		}
-  		estimator.predict(new_state);
-  		val (q_next, q_prob, _, _) = estimator.getOutputs4; 
-  		val v_next = q_next dot q_prob;
+  		estimator.predict4(new_state);
+  		val (v_next, _, _, _) = estimator.getOutputs4; 
   		times(5) = toc;
 
-  		reward_memory(ndqn-1,?) = done_memory(ndqn-1,?) *@ reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
-  		for (i <- (ndqn-2) to 0 by -1) {
+  		reward_memory(ndqn,?) = done_memory(ndqn,?) *@ reward_memory(ndqn,?) + (1f-done_memory(ndqn,?)) *@ v_next; // Add to reward mem if no actual reward
+  		for (i <- (ndqn-1) to 0 by -1) {
   			// Propagate rewards back in time. Actual rewards override predicted rewards. 
   			reward_memory(i,?) = done_memory(i,?) *@ reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
   		}
 
   		// Now compute gradients for the states/actions/rewards saved in the table.
   		for (i <- 0 until ndqn) {
-  			new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar));
-  			estimator.gradient(new_state, action_memory(i,?), reward_memory(i,?), npar);
+  			new_state <-- state_memory(?,?,i->(i+nwindow),?);
+  			estimator.gradient4(new_state, action_memory(i,?), reward_memory(i,?), reward_memory(i+1,?));
   			val (_, _, ev, lv) = estimator.getOutputs4;
   			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss
   			block_entropy += sum(ev).v; 
