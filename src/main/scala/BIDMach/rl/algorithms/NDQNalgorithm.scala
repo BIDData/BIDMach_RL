@@ -48,6 +48,7 @@ class NDQNalgorithm(
 	
 	var q_estimator:Estimator = null;
 	var t_estimator:Estimator = null;
+	val dtimes = zeros(1,7);
 
 	
 	def startup {
@@ -133,7 +134,7 @@ class NDQNalgorithm(
   	t_estimator.predict(state);
   	  	
   	val times = zeros(1,8);
-  	val dtimes = zeros(1,7);
+  	dtimes.clear;
   	val ractions = int(rand(1, npar) * nactions);
   	val (obs0, rewards0, dones0) = parstepper(envs, VALID_ACTIONS(ractions), null, null, null);           // step through parallel envs
  

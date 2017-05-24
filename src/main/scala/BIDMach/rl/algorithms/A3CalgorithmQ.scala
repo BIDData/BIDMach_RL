@@ -45,6 +45,7 @@ class A3CalgorithmQ(
 	var saved_actions:IMat = null;
 	var saved_preds:FMat = null; 
 	var reward_plot:FMat = null;
+	val dtimes = zeros(1,7);
 	
 	var estimator:Estimator = null;
 	
@@ -128,7 +129,7 @@ class A3CalgorithmQ(
   	estimator.predict(state);    //	Initialize them by making predictions
   	  	
   	val times = zeros(1,8);
-  	val dtimes = zeros(1,7);
+  	dtimes.clear;
   	val ractions = int(rand(1, npar) * nactions);
   	val (obs0, rewards0, dones0) = parstepper(envs, VALID_ACTIONS(ractions), null, null, null);           // step through parallel envs
  
