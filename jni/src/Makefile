@@ -2,7 +2,7 @@ include Makefile.incl
 
 CUDA_OBJS=
 
-CPU_OBJS=BIDMach_ALE.$(OBJ) $(ALE_HOME)/libale.a
+CPU_OBJS=BIDMach_ALE.$(OBJ) 
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
@@ -13,7 +13,7 @@ cudalib:
 cpulib: $(LIBPREPEND)bidmachale$(LIBAPPEND) 
 
 $(LIBPREPEND)bidmachale$(LIBAPPEND): $(CPU_OBJS)
-	$(LD) $(LDFLAGS) $(CPU_OBJS) $(CPU_LIBS) $(OUTFLG)$@
+	$(LD) $(LDFLAGS) $(CPU_OBJS) $(CPU_LIBS) $(ALE) $(OUTFLG)$@
 
 %.$(OBJ) : %.c
 	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) $*.c

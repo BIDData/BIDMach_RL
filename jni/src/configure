@@ -6,6 +6,9 @@ DEVVERSION="dev-cuda8.0"
 if [ "$ALE_HOME" = "" ]; then
     ALE_HOME="/code/ALE"
 fi
+if [ "$ZLIB_DIR" = "" ]; then
+    ZLIB_DIR="/code/zlib"
+fi
 
 OS=`uname -a`
 PARLIB=$1
@@ -95,6 +98,7 @@ if [ "$OS" = "apple" ] ; then
 	    CPU_LIBS="-L${BIDMACH_ROOT}/lib \
             -lpthread -lm -lz -lstdc++ -framework JavaVM"
     fi
+    ALE="${ALE_HOME}/libale.a"
     LIBDIR="${BIDMACH_ROOT}/lib"
     INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
 elif [ "$OS" = "linux" ] ; then
@@ -121,7 +125,7 @@ elif [ "$OS" = "linux" ] ; then
 	OUTFLG="-o "
 	CPPFLAGS="-fPIC -std=c++11 -marm -mfloat-abi=hard -march=${ARMARCH} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMACH_ROOT/jni/include -I$ALE_HOME/src ${BLAS_INCLUDE}"
 	CFLAGS="-fPIC -fopenmp -marm -mfloat-abi=hard -march=${ARMARCH} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMACH_ROOT/jni/include ${BLAS_INCLUDE}"
-	LB="ar rc"    
+	LB="ar rc"   
 	GLD="g++ -shared"
 	LD="g++ -shared -z noexecstack"
 	LDFLAGS="$LDFLAGS"
@@ -138,6 +142,7 @@ elif [ "$OS" = "linux" ] ; then
 	else
             CULIB="lib64"
 	fi
+    ALE="${ALE_HOME}/libale.a"
 	LIBDIR="${BIDMACH_ROOT}/lib"
 	INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
 else
@@ -150,7 +155,7 @@ else
 	OUTFLG="-o "
 	CPPFLAGS="-fPIC -c -O2 -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMACH_ROOT/jni/include -I$ALE_HOME/src" 
 	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
-	LB="ar rc"    
+	LB="ar rc" 
 	GLD="g++ -shared"
 	LD="gcc -shared -z noexecstack"
 	LDFLAGS="$LDFLAGS"
@@ -172,6 +177,7 @@ else
 	else
             CULIB="lib64"
 	fi
+    ALE="${ALE_HOME}/libale.a"
 	LIBDIR="${BIDMACH_ROOT}/lib"
 	INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
     fi
@@ -183,7 +189,7 @@ elif [ "$OS" = "windows" ] ; then
     OUTFLG="/OUT:"
     CFLAGS="/openmp /c /MT /DNDEBUG /O2 /EHsc $CFLAGS"    # static linking
     CPPFLAGS="/c /MT /DNDEBUG /O2 /EHsc $CFLAGS"    # static linking
-    LB="lib"    
+    LB="lib" 
     LD="link"
     GLD="link"
     if [ "$ARCH" = "x86" ] ; then
@@ -205,10 +211,12 @@ elif [ "$OS" = "windows" ] ; then
     else
 	    CPU_LIBS=""
     fi
+    ALE_HOME=`echo ${ALE_HOME} | sed 'sx/x\\\\xg'`
+    ALE="libale.lib zlib.lib legacy_stdio_definitions.lib"
     LIBDIR="${BIDMACH_ROOT}/lib"
     INSTALL_DIR="${BIDMACH_ROOT}/src/main/resources/lib"
-    LIB="$BLAS_ROOT/lib/${ARCHD};$JAVA_HOME/lib;${CULIB};${LIBDIR};$LIB"
-    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$BLAS_ROOT/include;${BIDMACH_ROOT}/jni/include;$CUDA_HOME/include;$INCLUDE"
+    LIB="$BLAS_ROOT/lib/${ARCHD};$JAVA_HOME/lib;${CULIB};${LIBDIR};${ZLIB_DIR};${ALE_HOME};$LIB"
+    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$BLAS_ROOT/include;${BIDMACH_ROOT}/jni/include;$CUDA_HOME/include;${ALE_HOME}/src;$INCLUDE"
 else
     echo "OS not supported"
     exit 1
@@ -220,6 +228,7 @@ echo "VERSION=$VERSION" >> Makefile.incl
 echo "DEVVERSION=$DEVVERSION" >> Makefile.incl
 echo "BIDMACH_ROOT=$BIDMACH_ROOT" >> Makefile.incl
 echo "ALE_HOME=$ALE_HOME" >> Makefile.incl
+echo "ALE=$ALE" >> Makefile.incl
 echo "CC=$CC" >> Makefile.incl
 echo "GCC=$GCC" >> Makefile.incl
 echo "SUBLIB=$SUBLIB" >> Makefile.incl
