@@ -14,11 +14,11 @@ import jcuda.jcudnn.JCudnn._
 import scala.util.hashing.MurmurHash3;
 import java.util.HashMap;
 
-class NDQNalgorithm(
+class NPGalgorithm(
 		val envs:Array[Environment], 
 		val parstepper:(Array[Environment], IMat, Array[FMat], FMat, FMat) => (Array[FMat], FMat, FMat),
 		val buildEstimator:(Estimator.Opts) => Estimator,
-		val opts:NDQNalgorithm.Opts = new NDQNalgorithm.Options
+		val opts:NPGalgorithm.Opts = new NPGalgorithm.Options
 		) extends Algorithm {
   
 	val npar = envs.length;                            // Number of parallel environments 
@@ -251,7 +251,7 @@ class NDQNalgorithm(
   }
 }
 
-object NDQNalgorithm {
+object NPGalgorithm {
   trait Opts extends Algorithm.Opts {
     
     var nsteps = 400000;                             // Number of steps to run (game actions per environment)

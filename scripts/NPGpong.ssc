@@ -1,0 +1,71 @@
+import jcuda.jcudnn.cudnnTensorFormat._;
+import jcuda.jcudnn.cudnnConvolutionMode._;
+
+val npar = 16;                                  // Number of parallel environments
+
+class ModelOpts extends NPGalgorithm.Options with PGestimator.Opts;
+
+val opts = new ModelOpts;                      // Model options
+opts.nsteps = 400000;                          // Number of steps to run (game actions per environment)
+opts.ndqn = 5;                                 // Number of DQN steps per update
+opts.target_window = 50;                       // Interval to update target estimator from q-estimator
+opts.discount_factor = 0.99f;                  // Reward discount factor
+opts.print_steps = 10000;                      // Number of steps between printouts
+opts.nwindow = 4;                              // Sensing window = last n images in a state
+opts.init_moves = 4000;                        // Upper bound on random number of moves to take initially
+
+opts.entropy_weight = 1e-5f;                   // Entropy regularization weight
+
+opts.lr_schedule = (0f \ 3e-6f on
+	  	    0.8f \ 3e-6f on
+		    0.9f \ 3e-7f on
+		    0.9f \ 1e-10f on
+		    1f \ 1e-10f); 
+
+opts.eps_schedule = (0f \ 0.2f on 
+		     0.8f \ 0.02f on 
+		     0.9f \ 0.01f on
+		     0.9f \ 0.0001f on
+                     1f \ 0.0001f);
+
+opts.temp_schedule = (0f \ 0.001f on 
+		      0.9f \ 0.001f on
+		      0.9f \ 0.0001f on
+                      1f \ 0.0001f);
+
+opts.baseline_decay = 0.9999f;                 // Baseline reward decay
+opts.gsq_decay = 0.99f;                        // Decay factor for MSProp
+opts.vel_decay = 0.9f;                         // Momentum decay
+opts.clipByValue = 1f;                         // gradient clipping
+
+opts.nhidden = 16;                             // Number of hidden layers for estimators
+opts.nhidden2 = 32;
+opts.nhidden3 = 256;
+opts.nactions = 3;
+
+val envopts = new AtariEnvironment.Options
+envopts.rom_dir="/code/ALE/roms/";
+envopts.rom_name="Pong.bin";                 
+envopts.height = 80;
+envopts.width = 80;
+envopts.xoff = 0;
+envopts.yoff = 35;
+envopts.pool = false;
+envopts.shrink = true;
+envopts.mode = 3;
+envopts.background = 34;
+envopts.frameskip = irow(4,4);
+envopts.repeat_action_probability = 0f;
+envopts.score_range = row(-1f,1f);
+
+val envs = new Array[Environment](npar);
+for (i <- 0 until npar) {
+    envopts.random_seed = i;
+    envs(i) = new AtariEnvironment(envopts);
+};
+
+val model = new NPGalgorithm(envs, AtariEnvironment.stepAll, PGestimator.build, opts);
+
+model.startup;
+
+model.train;
