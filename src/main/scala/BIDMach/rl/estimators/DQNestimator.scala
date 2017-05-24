@@ -51,15 +51,15 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  val eps =     const(1e-6f);
 
 	  // Convolution layers
-	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,initv=1f,convType=opts.convType);
+	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,initv=1f,convType=opts.convType,hasBias=opts.hasBias);
 	  val relu1 =   relu(conv1);
-	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,convType=opts.convType);
+	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,convType=opts.convType,hasBias=opts.hasBias);
 	  val relu2 =   relu(conv2);
 
 	  // FC/reward prediction layers
-	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,initv=2e-2f);
+	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,initv=2e-2f,hasBias=opts.hasBias);
 	  val relu3 =   relu(fc3);
-	  preds =       linear(relu3)(outdim=opts.nactions,initv=5e-2f); 
+	  preds =       linear(relu3)(outdim=opts.nactions,initv=5e-2f,hasBias=opts.hasBias); 
 
 	  // Probabilitylayers
 	  probs =       softmax(preds *@ invtemp); 
