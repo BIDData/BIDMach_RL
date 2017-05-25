@@ -83,11 +83,12 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 	  val aa =      advtgs(actions);
 	  val apreds =  preds(actions);
 	  val lpa =     logprobs(actions);
-	  gain =        lpa *@ target;     
-	  val weight =  fn2(target - apreds, aa)(fwdfn=weightedPGfn);
+	  gain =        lpa;     
+//	  val weight =  fn2(target - apreds, aa)(fwdfn=weightedPGfn);
+	  val weight =  target - apreds;
 
 	  // Total weighted negloss, maximize this
-	  val out =     lpa *@ weight + entropy *@ entropyw;
+	  val out =     lpa *@ forward(weight) + entropy *@ entropyw;
 
 	  Net.getDefaultNet;
   }
