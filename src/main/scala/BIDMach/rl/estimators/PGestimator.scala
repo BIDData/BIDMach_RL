@@ -14,7 +14,7 @@ import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estimator {
   
-  var invtemp:ConstantLayer = null;
+  var temp:ConstantLayer = null;
   var entropyw:ConstantLayer = null;
   
   var preds:Layer = null;
@@ -51,12 +51,12 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 	  val target =  input;
 	  
 	  // Settable param layers;
-	  invtemp  =    const(1f);
+	  temp  =    const(1f);
 	  entropyw=     const(1f);
 
 	  // Random constants
 	  val minus1 =  const(-1f);
-	  val eps =     const(1e-6f);
+	  val eps =     const(1e-2f);
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,initv=1f,convType=opts.convType,hasBias=opts.hasBias);
@@ -70,7 +70,7 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 	  preds =       linear(relu3)(outdim=opts.nactions,initv=5e-2f,hasBias=opts.hasBias); 
 
 	  // Probability/ advantage layers
-	  probs =       softmax(preds *@ invtemp); 
+	  probs =       softmax(preds / temp); 
 	  val pmean =   preds dot probs;
 	  advtgs =      preds - pmean;
 
@@ -82,10 +82,10 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 	  // Action weighting
 	  val aa =      advtgs(actions);
 	  val apreds =  preds(actions);
-	  val lpa =     logprobs(actions);
-	  gain =        lpa;     
+	  val lpa =     logprobs(actions) *@ temp;  
 //	  val weight =  fn2(target - apreds, aa)(fwdfn=weightedPGfn);
 	  val weight =  target - apreds;
+	  gain =        weight *@ weight;
 
 	  // Total weighted negloss, maximize this
 	  val out =     lpa *@ forward(weight) + entropy *@ entropyw;
@@ -96,8 +96,8 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 	override val net = createNet;
 
 	// Set temperature and entropy weight
-  override def setConsts2(invtemperature:Float, entropyWeight:Float) = {
-	  invtemp.opts.value =  invtemperature;
+  override def setConsts2(temperature:Float, entropyWeight:Float) = {
+	  temp.opts.value =  temperature;
 	  entropyw.opts.value =  entropyWeight;
   }
   

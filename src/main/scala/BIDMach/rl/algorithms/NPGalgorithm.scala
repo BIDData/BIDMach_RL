@@ -157,8 +157,8 @@ class NPGalgorithm(
   		val temp = temperatures(istep);                                          // Current temperature 
   		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
   		
-  		q_estimator.setConsts2(1/temp, opts.entropy_weight);
-  		t_estimator.setConsts2(1/temp, opts.entropy_weight);
+  		q_estimator.setConsts2(temp, opts.entropy_weight);
+  		t_estimator.setConsts2(temp, opts.entropy_weight);
 
   		if (istep % targwin== 0) t_estimator.update_from(q_estimator);           // Update the target estimator if needed    
 
