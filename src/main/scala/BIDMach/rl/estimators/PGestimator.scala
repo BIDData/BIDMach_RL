@@ -51,7 +51,7 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 	  val target =  input;
 	  
 	  // Settable param layers;
-	  temp  =    const(1f);
+	  temp  =       const(1f);
 	  entropyw=     const(1f);
 
 	  // Random constants
