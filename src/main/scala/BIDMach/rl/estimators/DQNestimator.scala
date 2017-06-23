@@ -35,7 +35,7 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
     }
   }
     
-  { 
+  def createNet = {
 	  import BIDMach.networks.layers.Node._;
 	  Net.initDefaultNodeSet;
 
@@ -79,16 +79,19 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 
 	  opts.nodeset = Net.getDefaultNodeSet;
 	  
+	  val net = new Net(opts);
+	  
 	  net.createLayers;
 	  
 	  predsLayer = preds.myLayer;
 	  probsLayer = probs.myLayer;
 	  entropyLayer = entropy.myLayer;
 	  lossLayer = loss.myLayer;
-
+	  
+	  net;
   }
 
-  override val net = new Net(opts);
+  override val net = createNet;
 
 
 	// Set temperature and entropy weight
