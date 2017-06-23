@@ -1,7 +1,7 @@
 # BIDMach_RL
 BIDMach project for state-of-the-art RL algorithms. Currently includes N-step DQN and A3C (arguably its A2C since it uses a GPU and is only partly asynchronous). 
 
-To build and run, do:
+To build and run using Apache Maven, do:
 <pre>
 git clone http://github.com/BIDData/BIDMach_RL
 cd BIDMach_RL
