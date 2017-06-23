@@ -57,7 +57,7 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_newALE
 (JNIEnv *env, jobject jale)
 {
-  ALEInterface * alep = new ALEInterface(2);
+  ALEInterface * alep = new ALEInterface();
   int status = (alep != NULL);
   setALE(env, jale, alep);
   
