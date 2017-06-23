@@ -8,4 +8,10 @@ cd BIDMach_RL
 mvn clean install
 </pre>
 
-You run Atari games you will need to put the appropriate ROMs in BIDMach_RL/roms
+You run Atari games you will need to put the appropriate ROMs in BIDMach_RL/roms. 
+
+To run the scripts, do:
+<pre> 
+cd scripts
+../bidmach &lt;ScriptName&gt;
+</pre>
