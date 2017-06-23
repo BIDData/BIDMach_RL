@@ -14,16 +14,18 @@ import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estimator {
   
-  var temp:ConstantLayer = null;
-  var entropyw:ConstantLayer = null;
+  var temp:ConstantNode = null;
+  var entropyw:ConstantNode = null;
   
-  var preds:Layer = null;
-  var probs:Layer = null;
-  var advtgs:Layer = null;
-  var entropy:Layer = null;
-  var gain:Layer = null;
+  var predsLayer:Layer = null;
+  var probsLayer:Layer = null;
+  var advtgsLayer:Layer = null;
+  var entropyLayer:Layer = null;
+  var gainLayer:Layer = null;
   var nentropy = 0;
-  
+
+  val inplace = true;
+
   override def formatStates(s:FMat) = {
     if (net.opts.tensorFormat == Net.TensorNCHW) {
     	s.reshapeView(s.dims(2), s.dims(0), s.dims(1), s.dims(3));
@@ -41,9 +43,9 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
   
   val weightedPGfn = weightedPG _;
     
-	def createNet:Net = {
-	  import BIDMach.networks.layers.Layer._;
-	  Net.initDefault(opts);
+  def createNet = {
+	  import BIDMach.networks.layers.Node._;
+	  Net.initDefaultNodeSet;
 
 	  // Input layers 
 	  val in =      input;
@@ -51,8 +53,8 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 	  val target =  input;
 	  
 	  // Settable param layers;
-	  temp  =       const(1f);
-	  entropyw=     const(1f);
+	  val temp  =   const(1f);
+	  val entropyw= const(1f);
 
 	  // Random constants
 	  val minus1 =  const(-1f);
@@ -60,24 +62,24 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,initv=1f,convType=opts.convType,hasBias=opts.hasBias);
-	  val relu1 =   relu(conv1);
+	  val relu1 =   relu(conv1)(inplace);
 	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,convType=opts.convType,hasBias=opts.hasBias);
-	  val relu2 =   relu(conv2);
+	  val relu2 =   relu(conv2)(inplace);
 
 	  // FC/reward prediction layers
 	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,initv=2e-2f,hasBias=opts.hasBias);
-	  val relu3 =   relu(fc3);
-	  preds =       linear(relu3)(outdim=opts.nactions,initv=5e-2f,hasBias=opts.hasBias); 
+	  val relu3 =   relu(fc3)(inplace);
+	  val preds =   linear(relu3)(outdim=opts.nactions,initv=5e-2f,hasBias=opts.hasBias); 
 
 	  // Probability/ advantage layers
-	  probs =       softmax(preds / temp); 
+	  val probs =   softmax(preds / temp); 
 	  val pmean =   preds dot probs;
-	  advtgs =      preds - pmean;
+	  val advtgs =  preds - pmean;
 
 	  // Entropy layers
 	  val logprobs = ln(probs + eps);
-	  entropy =     (logprobs dot probs) *@ minus1;
-	  nentropy =    Net.defaultLayerList.length;
+	  val entropy =  (logprobs dot probs) *@ minus1;
+	  val nentropy=  Net.defaultNodeList.length;
 
 	  // Action weighting
 	  val aa =      advtgs(actions);
@@ -85,28 +87,40 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 	  val lpa =     logprobs(actions) *@ temp;  
 //	  val weight =  fn2(target - apreds, aa)(fwdfn=weightedPGfn);
 	  val weight =  target - apreds;
-	  gain =        weight *@ weight;
+	  val gain =    weight *@ weight;
 
 	  // Total weighted negloss, maximize this
 	  val out =     lpa *@ forward(weight) + entropy *@ entropyw;
 
-	  Net.getDefaultNet;
+      opts.nodeset = Net.getDefaultNodeSet;
+
+      val net = new Net(opts);
+
+      net.createLayers;
+    
+      predsLayer = preds.myLayer;
+      probsLayer = probs.myLayer;
+      advtgsLayer = advtgs.myLayer;
+      entropyLayer = entropy.myLayer;
+      gainLayer = gain.myLayer;
+
+      net;
   }
-	
-	override val net = createNet;
+
+  override val net = createNet;
 
 	// Set temperature and entropy weight
   override def setConsts2(temperature:Float, entropyWeight:Float) = {
-	  temp.opts.value =  temperature;
-	  entropyw.opts.value =  entropyWeight;
+	  temp.value =  temperature;
+	  entropyw.value =  entropyWeight;
   }
   
   // Get the Q-predictions, action probabilities, entropy and loss for the last forward pass. 
   override def getOutputs4:(FMat,FMat,FMat,FMat) = {
-    (FMat(preds.output),
-     FMat(probs.output),
-     FMat(entropy.output),
-     FMat(gain.output)
+    (FMat(predsLayer.output),
+     FMat(probsLayer.output),
+     FMat(entropyLayer.output),
+     FMat(gainLayer.output)
     		)    
   }
 };

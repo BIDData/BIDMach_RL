@@ -14,14 +14,16 @@ import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Estimator {
   
-  var invtemp:ConstantLayer = null;
-  var entropyw:ConstantLayer = null;
+  var invtemp:ConstantNode = null;
+  var entropyw:ConstantNode = null;
   
-  var preds:Layer = null;
-  var probs:Layer = null;
-  var entropy:Layer = null;
-  var loss:Layer = null;
+  var predsLayer:Layer = null;
+  var probsLayer:Layer = null;
+  var entropyLayer:Layer = null;
+  var lossLayer:Layer = null;
   var nentropy = 0;
+  
+  val inplace = true;
   
   override def formatStates(s:FMat) = {
     if (net.opts.tensorFormat == Net.TensorNCHW) {
@@ -33,9 +35,9 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
     }
   }
     
-	def createNet:Net = {
-	  import BIDMach.networks.layers.Layer._;
-	  Net.initDefault(opts);
+  { 
+	  import BIDMach.networks.layers.Node._;
+	  Net.initDefaultNodeSet;
 
 	  // Input layers 
 	  val in =      input;
@@ -52,46 +54,55 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,initv=1f,convType=opts.convType,hasBias=opts.hasBias);
-	  val relu1 =   relu(conv1);
+	  val relu1 =   relu(conv1)(inplace);
 	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,convType=opts.convType,hasBias=opts.hasBias);
-	  val relu2 =   relu(conv2);
+	  val relu2 =   relu(conv2)(inplace);
 
 	  // FC/reward prediction layers
 	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,initv=2e-2f,hasBias=opts.hasBias);
-	  val relu3 =   relu(fc3);
-	  preds =       linear(relu3)(outdim=opts.nactions,initv=5e-2f,hasBias=opts.hasBias); 
+	  val relu3 =   relu(fc3)(inplace);
+	  val preds =   linear(relu3)(outdim=opts.nactions,initv=5e-2f,hasBias=opts.hasBias); 
 
 	  // Probabilitylayers
-	  probs =       softmax(preds *@ invtemp); 
+	  val probs =   softmax(preds *@ invtemp); 
 
 	  // Entropy layers
-	  entropy =     (ln(probs + eps) dot probs) *@ minus1;
-	  nentropy =    Net.defaultLayerList.length;
+	  val entropy = (ln(probs + eps) dot probs) *@ minus1;
+	  val nentropy= Net.defaultNodeList.length;
 
 	  // Action loss layers
 	  val diff =    target - preds(actions);
-	  loss =        diff *@ diff;                     // Index of base loss layer.
+	  val loss =    diff *@ diff;                     // Base loss layer.
 
 	  // Total weighted negloss, maximize this
 	  val out =     loss *@ minus1 + entropy *@ entropyw;
 
-	  Net.getDefaultNet;
+	  opts.nodeset = Net.getDefaultNodeSet;
+	  
+	  net.createLayers;
+	  
+	  predsLayer = preds.myLayer;
+	  probsLayer = probs.myLayer;
+	  entropyLayer = entropy.myLayer;
+	  lossLayer = loss.myLayer;
+
   }
-	
-	override val net = createNet;
+
+  override val net = new Net(opts);
+
 
 	// Set temperature and entropy weight
   override def setConsts2(invtemperature:Float, entropyWeight:Float) = {
-	  invtemp.opts.value =  invtemperature;
-	  entropyw.opts.value =  entropyWeight;
+	  invtemp.value =  invtemperature;
+	  entropyw.value =  entropyWeight;
   }
   
   // Get the Q-predictions, action probabilities, entropy and loss for the last forward pass. 
   override def getOutputs4:(FMat,FMat,FMat,FMat) = {
-    (FMat(preds.output),
-     FMat(probs.output),
-     FMat(entropy.output),
-     FMat(loss.output)
+    (FMat(predsLayer.output),
+     FMat(probsLayer.output),
+     FMat(entropyLayer.output),
+     FMat(lossLayer.output)
     		)    
   }
 };

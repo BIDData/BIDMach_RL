@@ -22,15 +22,17 @@ import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends Estimator {
   
-  var invtemp:ConstantLayer = null;
-  var entropyw:ConstantLayer = null;
-  var gradw:ConstantLayer = null;
+  var invtemp:ConstantNode = null;
+  var entropyw:ConstantNode = null;
+  var gradw:ConstantNode = null;
   
-  var vpreds:Layer = null;
-  var probs:Layer = null;
-  var entropy:Layer = null;
-  var loss:Layer = null;
+  var vpredsLayer:Layer = null;
+  var probsLayer:Layer = null;
+  var entropyLayer:Layer = null;
+  var lossLayer:Layer = null;
   var nentropy = 0;
+
+  val inplace = true;
   
   override def formatStates(s:FMat) = {
     if (net.opts.tensorFormat == Net.TensorNCHW) {
@@ -42,9 +44,9 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
     }
   }
     
-	def createNet:Net = {
-	  import BIDMach.networks.layers.Layer._;
-	  Net.initDefault(opts);
+  def createNet = { 
+	  import BIDMach.networks.layers.Node._;
+	  Net.initDefaultNodeSet;
 
 	  // Input layers 
 	  val in =      input;
@@ -63,27 +65,27 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,initv=1f,convType=opts.convType);
-	  val relu1 =   relu(conv1);
+	  val relu1 =   relu(conv1)(inplace);
 	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,convType=opts.convType);
-	  val relu2 =   relu(conv2);
+	  val relu2 =   relu(conv2)(inplace);
 
 	  // FC/reward prediction layers
 	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,initv=2e-2f);
-	  val relu3 =   relu(fc3); 
+	  val relu3 =   relu(fc3)(inplace); 
 	  val ppreds =  linear(relu3)(outdim=opts.nactions,initv=5e-2f);
-	  vpreds =      linear(relu3)(outdim=1,initv=5e-2f);
+	  val vpreds =  linear(relu3)(outdim=1,initv=5e-2f);
 
 	  // Probability layers
-	  probs =       softmax(ppreds *@ invtemp); 
+	  val probs =   softmax(ppreds *@ invtemp); 
 
 	  // Entropy layers
 	  val logprobs= ln(probs + eps);
-	  entropy =     (logprobs dot probs) *@ minus1;
-	  nentropy =    Net.defaultLayerList.length;
+	  val entropy = (logprobs dot probs) *@ minus1;
+	  val nentropy= Net.defaultNodeList.length;
 
 	  // Value loss layers
 	  val diff =    vtarget - vpreds;
-	  loss =        diff *@ diff;     
+	  val loss =    diff *@ diff;     
 	  
 	  // Policy gradient
 	  val advtg =   atarget - vpreds;
@@ -92,24 +94,35 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
 	  // Total weighted negloss, maximize this
 	  val out =     loss *@ minus1 + pgrad *@ gradw + entropy *@ entropyw;
 
-	  Net.getDefaultNet;
+	  opts.nodeset = Net.getDefaultNodeSet;
+	  
+	  val net = new Net(opts);
+	  
+	  net.createLayers;
+	  
+	  vpredsLayer = vpreds.myLayer;
+    probsLayer = probs.myLayer;
+    entropyLayer = entropy.myLayer;
+    lossLayer = loss.myLayer;
+    
+	  net
   }
-	
+
   override val net = createNet;
 
 	// Set temperature and entropy weight
   override def setConsts3(invtemperature:Float, entropyWeight:Float, gradWeight:Float) = {
-	  invtemp.opts.value =  invtemperature;
-	  entropyw.opts.value = entropyWeight;
-	  gradw.opts.value =    gradWeight;
+	  invtemp.value =  invtemperature;
+	  entropyw.value = entropyWeight;
+	  gradw.value =    gradWeight;
   }
   
   // Get the Q-predictions, action probabilities, entropy and loss for the last forward pass. 
   override def getOutputs4:(FMat,FMat,FMat,FMat) = {
-    (FMat(vpreds.output),
-     FMat(probs.output),
-     FMat(entropy.output),
-     FMat(loss.output)
+    (FMat(vpredsLayer.output),
+     FMat(probsLayer.output),
+     FMat(entropyLayer.output),
+     FMat(lossLayer.output)
     		)    
   }
 };

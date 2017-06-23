@@ -18,8 +18,6 @@ import BIDMach.networks._
 @SerialVersionUID(100L)
 abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends Serializable {
     
-    def createNet:Net;
-    
     def formatStates(states:FMat):FMat = {states}
     
     val net:Net = null;
