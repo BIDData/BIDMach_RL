@@ -1,3 +1,7 @@
+// Run this script from the BIDMach_RL/scripts directory, or edit the rom path below to an absolute path. 
+
+val rom_dir = "../roms/";
+
 import jcuda.jcudnn.cudnnTensorFormat._;
 import jcuda.jcudnn.cudnnConvolutionMode._;
 
@@ -41,7 +45,7 @@ opts.nhidden3 = 256;
 opts.nactions = 3;
 
 val envopts = new AtariEnvironment.Options
-envopts.rom_dir="/code/ALE/roms/";
+envopts.rom_dir=rom_dir;
 envopts.rom_name="Pong.bin";                 
 envopts.height = 80;
 envopts.width = 80;
