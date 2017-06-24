@@ -160,7 +160,7 @@ class NDQNalgorithm(
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
   		t_estimator.setConsts2(1/temp, opts.entropy_weight);
 
-  		if (istep % targwin== 0) t_estimator.update_from(q_estimator);           // Update the target estimator if needed    
+  		if (istep % targwin < ndqn) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
 
   		for (i <- 0 until ndqn) {
   			times(0) = toc;
@@ -253,6 +253,9 @@ class NDQNalgorithm(
 
 object NDQNalgorithm {
   trait Opts extends Algorithm.Opts {
+    
+    logfile = "logNDQN.txt";
+    tensorFormat = Net.TensorNCHW;
     
     var nsteps = 400000;                             // Number of steps to run (game actions per environment)
   	var ndqn = 5;                                    // Number of DQN steps per update
