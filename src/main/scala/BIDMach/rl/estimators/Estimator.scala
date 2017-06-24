@@ -146,7 +146,9 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
 
     def update_from(from_estimator:Estimator) = {
     	for (k  <- 0 until net.modelmats.length) {
-    		net.modelmats(k) <-- from_estimator.net.modelmats(k);
+    	  if (net.modelmats(k).asInstanceOf[AnyRef] != null && from_estimator.net.modelmats(k).asInstanceOf[AnyRef] != null) {
+    	  	net.modelmats(k) <-- from_estimator.net.modelmats(k);
+    	  }
     	}
     }
     
