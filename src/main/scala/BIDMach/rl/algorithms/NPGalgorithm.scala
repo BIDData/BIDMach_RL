@@ -19,7 +19,7 @@ class NPGalgorithm(
 		val parstepper:(Array[Environment], IMat, Array[FMat], FMat, FMat) => (Array[FMat], FMat, FMat),
 		val buildEstimator:(Estimator.Opts) => Estimator,
 		val opts:NPGalgorithm.Opts = new NPGalgorithm.Options
-		) extends Algorithm {
+		) extends Algorithm(opts) {
   
 	val npar = envs.length;                            // Number of parallel environments 
 	

@@ -19,7 +19,7 @@ class NDQNalgorithm(
 		val parstepper:(Array[Environment], IMat, Array[FMat], FMat, FMat) => (Array[FMat], FMat, FMat),
 		val buildEstimator:(Estimator.Opts) => Estimator,
 		val opts:NDQNalgorithm.Opts = new NDQNalgorithm.Options
-		) extends Algorithm {
+		) extends Algorithm(opts) {
   
 	val npar = envs.length;                            // Number of parallel environments 
 	

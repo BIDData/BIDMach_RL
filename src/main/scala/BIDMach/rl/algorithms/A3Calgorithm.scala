@@ -19,7 +19,7 @@ class A3Calgorithm(
 		val parstepper:(Array[Environment], IMat, Array[FMat], FMat, FMat) => (Array[FMat], FMat, FMat),
 		val buildEstimator:(Estimator.Opts) => Estimator,
 		val opts:A3Calgorithm.Opts = new A3Calgorithm.Options
-		) extends Algorithm {
+		) extends Algorithm(opts) {
   
 	val npar = envs.length;                            // Number of parallel environments 
 	
