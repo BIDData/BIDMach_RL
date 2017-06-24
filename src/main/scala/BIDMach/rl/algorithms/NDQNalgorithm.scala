@@ -236,7 +236,7 @@ class NDQNalgorithm(
   		val t = toc;
   		if (istep % printsteps0 == 0) {
   			total_reward += block_reward;
-  			println("I %5d, T %4.1f, L %7.6f, Ent %5.4f, E %d, R/E %5.4f, CR/E %5.4f" 
+  			myLogger.info("I %5d, T %4.1f, L %7.6f, Ent %5.4f, E %d, R/E %5.4f, CR/E %5.4f" 
   					format(istep, t, block_loss/printsteps0/npar, block_entropy/printsteps0/npar, 
   							total_epochs, block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)));
   			reward_plot(istep/printsteps0-1) = block_reward/math.max(1,total_epochs-last_epochs);
