@@ -22,7 +22,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     
     val net:Net = null;
     
-    val adagrad = new ADAGrad(opts);
+    val updater = new ADAGrad(opts);
     
 /** Perform the initialization that is normally done by the Learner */
 
@@ -47,7 +47,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	if (!initialized) {
     		net.useGPU = (opts.useGPU && Mat.hasCUDA > 0);
     		net.init();
-    		adagrad.init(net);
+    		updater.init(net);
     		initialized = true;
     	}
     	net.copyMats(net.mats, net.gmats);
@@ -78,7 +78,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	if (!initialized) {
     		net.useGPU = (opts.useGPU && Mat.hasCUDA > 0);
     		net.init();
-    		adagrad.init(net);
+    		updater.init(net);
     		initialized = true;
     	}
     	net.copyMats(net.mats, net.gmats);
@@ -139,7 +139,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     def msprop(learning_rate:Float) = {                
     	opts.lrate = learning_rate;
     	if (learning_rate > 1e-10f) {
-    		adagrad.update(0,0,0);		
+    		updater.update(0,0,0);		
     		net.cleargrad;
     	}
     }
