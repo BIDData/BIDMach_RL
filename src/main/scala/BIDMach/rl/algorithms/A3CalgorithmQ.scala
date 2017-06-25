@@ -145,7 +145,7 @@ class A3CalgorithmQ(
   	reward_plot = zeros(1, nsteps/printsteps0);
 
   	tic;
-  	var istep = 0;
+  	var istep = ndqn;
   	while (istep < opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                // update the decayed learning rate
