@@ -145,13 +145,15 @@ class A3CalgorithmQ(
   	reward_plot = zeros(1, nsteps/printsteps0);
 
   	tic;
-  	for (istep <- ndqn to opts.nsteps by ndqn) {
+  	var istep = 0;
+  	while (istep < opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                // update the decayed learning rate
   		val temp = temperatures(istep);                                // get an epsilon for the eps-greedy policy
   		estimator.setConsts3(1/temp, opts.entropy_weight, opts.policygrad_weight);
 
-  		for (i <- 0 until ndqn) {
+  		var i = 0;
+  		while (i < ndqn && !done) {
   			times(0) = toc;
   			estimator.predict(state); // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = estimator.getOutputs4;
@@ -194,6 +196,8 @@ class A3CalgorithmQ(
   			state <-- new_state;
   			times(4) = toc;
   			dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
+  			while (paused || istep + i >= pauseAt) Thread.sleep(1000);
+  			i += 1;
   		}
   		estimator.predict(new_state);
   		val (q_next, q_prob, _, _) = estimator.getOutputs4; 
@@ -232,6 +236,7 @@ class A3CalgorithmQ(
   			block_loss = 0f;
   			block_entropy = 0f;
   		}
+  		istep += ndqn;
   	}
   	Mat.useGPUcache = GPUcacheState;
   	Mat.useCache = cacheState;

@@ -151,7 +151,8 @@ class NDQNalgorithm(
   	reward_plot = zeros(1, nsteps/printsteps0);
 
   	tic;
-  	for (istep <- ndqn to opts.nsteps by ndqn) {
+  	var istep = 0;
+  	while (istep < opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                          // Update the decayed learning rate
   		val temp = temperatures(istep);                                          // Current temperature 
@@ -162,7 +163,8 @@ class NDQNalgorithm(
 
   		if (istep % targwin < ndqn) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
 
-  		for (i <- 0 until ndqn) {
+  		var i = 0;
+  		while (i < ndqn && !done) {
   			times(0) = toc;
   			q_estimator.predict(state);                                            // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
@@ -207,6 +209,8 @@ class NDQNalgorithm(
   			state <-- new_state;
   			times(4) = toc;
   			dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
+  			while (paused || istep + i >= pauseAt) Thread.sleep(1000);
+  			i += 1;
   		}
   		t_estimator.predict(new_state);
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
@@ -236,7 +240,7 @@ class NDQNalgorithm(
   		val t = toc;
   		if (istep % printsteps0 == 0) {
   			total_reward += block_reward;
-  			myLogger.info("I %5d, T %4.1f, Loss %7.6f, Ent %5.4f, Ep %d, Rew/Ep %5.4f, Cum Rew/Ep %5.4f" 
+  			myLogger.info("Iter %5d, Time %4.1f, Loss %7.6f, Entropy %5.4f, Epoch %d, Rew/Ep %5.4f, Cum Rew/Ep %5.4f" 
   					format(istep, t, block_loss/printsteps0/npar, block_entropy/printsteps0/npar, 
   							total_epochs, block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)));
   			reward_plot(istep/printsteps0-1) = block_reward/math.max(1,total_epochs-last_epochs);
@@ -245,6 +249,7 @@ class NDQNalgorithm(
   			block_loss = 0f;
   			block_entropy = 0f;
   		}
+  		istep += ndqn;
   	}
   	Mat.useGPUcache = GPUcacheState;
   	Mat.useCache = cacheState;

@@ -21,10 +21,27 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
   
 	var myLogger = Mat.consoleLogger;
 	var fut:Future[_] = null;
+  var done = false;
+  var paused = false;
+  var pauseAt = -1L;
 	
   def startup;
   
   def train;
+  
+  def pause = {
+    paused = true;
+    Thread.sleep(500);
+  }
+  
+  def unpause = {
+    paused = false;
+  }
+  
+  def stop = {
+    done = true;
+  }
+  
   
   def launchTrain = {
     val tmp = myLogger;
@@ -47,7 +64,6 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
 
 object Algorithm {
   trait Opts extends Net.Opts with ADAGrad.Opts { 	
-  	clipByValue = 1f;                                // gradient clipping
   	gsq_decay = 0.99f;                               // Decay factor for MSProp
   	vel_decay = 0.0f;                                // Momentum decay
   	texp = 0f;

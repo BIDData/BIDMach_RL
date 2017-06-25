@@ -140,7 +140,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	opts.lrate = learning_rate;
     	if (learning_rate > 1e-10f) {
     		updater.update(0,0,0);		
-    		net.cleargrad;
+    		net.clearUpdatemats;
     	}
     }
 
