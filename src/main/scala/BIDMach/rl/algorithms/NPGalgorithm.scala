@@ -209,7 +209,7 @@ class NPGalgorithm(
   			state <-- new_state;
   			times(4) = toc;
   			dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
-  			while (paused || istep + i >= pauseAt) Thread.sleep(1000);
+  			while (paused || (pauseAt > 0 && istep + i >= pauseAt)) Thread.sleep(1000);
   			i += 1;
   		}
   		t_estimator.predict(new_state);
