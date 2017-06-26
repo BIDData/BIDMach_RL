@@ -13,7 +13,7 @@ cudalib:
 cpulib: $(LIBPREPEND)bidmachale$(LIBAPPEND) 
 
 $(LIBPREPEND)bidmachale$(LIBAPPEND): $(CPU_OBJS)
-	$(LD) $(LDFLAGS) $(CPU_OBJS) $(CPU_LIBS) $(ALE) $(OUTFLG)$@
+	$(LD) $(LDFLAGS) $(CPU_OBJS) $(ALE) $(CPU_LIBS) $(OUTFLG)$@
 
 %.$(OBJ) : %.c
 	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) $*.c

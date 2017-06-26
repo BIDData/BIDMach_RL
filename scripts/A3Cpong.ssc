@@ -2,9 +2,6 @@
 
 val rom_dir = "../roms/";
 
-import jcuda.jcudnn.cudnnTensorFormat._;
-import jcuda.jcudnn.cudnnConvolutionMode._;
-
 val npar = 16;                                  // Number of parallel environments
 
 class ModelOpts extends A3Calgorithm.Options with A3CestimatorV.Opts;
@@ -13,16 +10,16 @@ val opts = new ModelOpts;                      // Model options
 opts.nsteps = 400000;                          // Number of steps to run (game actions per environment)
 opts.ndqn = 5;                                 // Number of DQN steps per update
 opts.discount_factor = 0.99f;                  // Reward discount factor
-opts.print_steps = 10000;                      // Number of steps between printouts
+opts.print_steps = 1000;                      // Number of steps between printouts
 opts.nwindow = 4;                              // Sensing window = last n images in a state
 opts.init_moves = 4000;                        // Upper bound on random number of moves to take initially
-
+opts.vexp = 0.5f;
 opts.policygrad_weight = 0.3f;
 opts.entropy_weight = 1e-4f;                   // Entropy regularization weight
 
-opts.lr_schedule = (0f \ 3e-6f on
-		   0.8f \ 3e-6f on
-		   0.9f \ 3e-7f on
+opts.lr_schedule = (0f \ 3e-7f on
+		   0.8f \ 3e-7f on
+		   0.9f \ 3e-8f on
 		   0.9f \ 1e-10f on
 		   1f \ 1e-10f); 
 
@@ -35,7 +32,7 @@ opts.temp_schedule = (0f \ 1f on
 opts.baseline_decay = 0.9999f;                 // Baseline reward decay
 opts.gsq_decay = 0.99f;                        // Decay factor for MSProp
 opts.vel_decay = 0.9f;                         // Momentum decay
-opts.clipByValue = 1f;                         // gradient clipping
+//opts.clipByValue = 1f;                         // gradient clipping
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;

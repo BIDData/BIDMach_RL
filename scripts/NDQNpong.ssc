@@ -10,24 +10,29 @@ val npar = 16;                                  // Number of parallel environmen
 class ModelOpts extends NDQNalgorithm.Options with DQNestimator.Opts;
 
 val opts = new ModelOpts;                      // Model options
-opts.nsteps = 400000;                          // Number of steps to run (game actions per environment)
+opts.nsteps = 50000;                          // Number of steps to run (game actions per environment)
 opts.ndqn = 5;                                 // Number of DQN steps per update
 opts.target_window = 50;                       // Interval to update target estimator from q-estimator
 opts.discount_factor = 0.99f;                  // Reward discount factor
-opts.print_steps = 10000;                      // Number of steps between printouts
+opts.print_steps = 1000;                      // Number of steps between printouts
 opts.nwindow = 4;                              // Sensing window = last n images in a state
 opts.init_moves = 4000;                        // Upper bound on random number of moves to take initially
-
+opts.vel_decay = 0.9f;
 opts.entropy_weight = 1e-5f;                   // Entropy regularization weight
+opts.baseline_decay = 0.9999f;                 // Baseline reward decay
+opts.gsq_decay = 0.99f;                        // Decay factor for MSProp
+opts.clipByValue = 1f;                         // gradient clipping
+opts.vexp = 1f;
+opts.tensorFormat = Net.TensorNCHW;
 
-opts.lr_schedule = (0f \ 3e-6f on
-	  	    0.8f \ 3e-6f on
-		    0.9f \ 3e-7f on
+opts.lr_schedule = (0f \ 3e-7f on
+	  	    0.8f \ 3e-7f on
+		    0.9f \ 3e-8f on
 		    0.9f \ 1e-10f on
 		    1f \ 1e-10f); 
 
-opts.eps_schedule = (0f \ 0.2f on 
-		     0.8f \ 0.02f on 
+opts.eps_schedule = (0f \ 0.5f on 
+		     0.8f \ 0.05f on 
 		     0.9f \ 0.01f on
 		     0.9f \ 0.0001f on
                      1f \ 0.0001f);
@@ -37,10 +42,6 @@ opts.temp_schedule = (0f \ 0.001f on
 		      0.9f \ 0.0001f on
                       1f \ 0.0001f);
 
-opts.baseline_decay = 0.9999f;                 // Baseline reward decay
-opts.gsq_decay = 0.99f;                        // Decay factor for MSProp
-opts.vel_decay = 0.9f;                         // Momentum decay
-opts.clipByValue = 1f;                         // gradient clipping
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;
@@ -72,4 +73,5 @@ val model = new NDQNalgorithm(envs, AtariEnvironment.stepAll, DQNestimator.build
 
 model.startup;
 
-model.train;
+model.launchTrain
+//model.train
