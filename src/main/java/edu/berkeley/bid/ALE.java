@@ -24,6 +24,8 @@ public class ALE implements Serializable {
 
     private native int newALE();
 
+    private native int newALEx(int m);
+
     private native int deleteALE();
 
     public native int getInt(String str);

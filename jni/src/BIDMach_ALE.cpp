@@ -64,6 +64,16 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_newALE
   return status;
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_newALEx
+(JNIEnv *env, jobject jale, jint m)
+{
+  ALEInterface * alep = new ALEInterface(m);
+  int status = (alep != NULL);
+  setALE(env, jale, alep);
+  
+  return status;
+}
+
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_deleteALE
 (JNIEnv *env, jobject jale)
 {
