@@ -44,67 +44,67 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
   val weightedPGfn = weightedPG _;
     
   def createNet = {
-	  import BIDMach.networks.layers.Node._;
-	  Net.initDefaultNodeSet;
+  	import BIDMach.networks.layers.Node._;
+  	Net.initDefaultNodeSet;
 
-	  // Input layers 
-	  val in =      input;
-	  val actions = input;
-	  val target =  input;
-	  
-	  // Settable param layers;
-	  val temp  =   const(1f);
-	  val entropyw= const(1f);
+  	// Input layers 
+  	val in =      input;
+  	val actions = input;
+  	val target =  input;
 
-	  // Random constants
-	  val minus1 =  const(-1f);
-	  val eps =     const(1e-2f);
+  	// Settable param layers;
+  	val temp  =   const(1f);
+  	val entropyw= const(1f);
 
-	  // Convolution layers
-	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,initv=1f,convType=opts.convType,hasBias=opts.hasBias);
-	  val relu1 =   relu(conv1)(inplace);
-	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,convType=opts.convType,hasBias=opts.hasBias);
-	  val relu2 =   relu(conv2)(inplace);
+  	// Random constants
+  	val minus1 =  const(-1f);
+  	val eps =     const(1e-2f);
 
-	  // FC/reward prediction layers
-	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,initv=2e-2f,hasBias=opts.hasBias);
-	  val relu3 =   relu(fc3)(inplace);
-	  val preds =   linear(relu3)(outdim=opts.nactions,initv=5e-2f,hasBias=opts.hasBias); 
+  	// Convolution layers
+  	val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,hasBias=opts.hasBias);
+  	val relu1 =   relu(conv1)(inplace);
+  	val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias);
+  	val relu2 =   relu(conv2)(inplace);
 
-	  // Probability/ advantage layers
-	  val probs =   softmax(preds / temp); 
-	  val pmean =   preds dot probs;
-	  val advtgs =  preds - pmean;
+  	// FC/reward prediction layers
+  	val fc3 =     linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
+  	val relu3 =   relu(fc3)(inplace);
+  	val preds =   linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias); 
 
-	  // Entropy layers
-	  val logprobs = ln(probs + eps);
-	  val entropy =  (logprobs dot probs) *@ minus1;
-	  val nentropy=  Net.defaultNodeList.length;
+  	// Probability/ advantage layers
+  	val probs =   softmax(preds / temp); 
+  	val pmean =   preds dot probs;
+  	val advtgs =  preds - pmean;
 
-	  // Action weighting
-	  val aa =      advtgs(actions);
-	  val apreds =  preds(actions);
-	  val lpa =     logprobs(actions) *@ temp;  
-//	  val weight =  fn2(target - apreds, aa)(fwdfn=weightedPGfn);
-	  val weight =  target - apreds;
-	  val gain =    weight *@ weight;
+  	// Entropy layers
+  	val logprobs = ln(probs + eps);
+  	val entropy =  (logprobs dot probs) *@ minus1;
+  	val nentropy=  Net.defaultNodeList.length;
 
-	  // Total weighted negloss, maximize this
-	  val out =     lpa *@ forward(weight) + entropy *@ entropyw;
+  	// Action weighting
+  	val aa =      advtgs(actions);
+  	val apreds =  preds(actions);
+  	val lpa =     logprobs(actions) *@ temp;  
+  	//	  val weight =  fn2(target - apreds, aa)(fwdfn=weightedPGfn);
+  	val weight =  target - apreds;
+  	val gain =    weight *@ weight;
 
-      opts.nodeset = Net.getDefaultNodeSet;
+  	// Total weighted negloss, maximize this
+  	val out =     lpa *@ forward(weight) + entropy *@ entropyw;
 
-      val net = new Net(opts);
+  	opts.nodeset = Net.getDefaultNodeSet;
 
-      net.createLayers;
-    
-      predsLayer = preds.myLayer;
-      probsLayer = probs.myLayer;
-      advtgsLayer = advtgs.myLayer;
-      entropyLayer = entropy.myLayer;
-      gainLayer = gain.myLayer;
+  	val net = new Net(opts);
 
-      net;
+  	net.createLayers;
+
+  	predsLayer = preds.myLayer;
+  	probsLayer = probs.myLayer;
+  	advtgsLayer = advtgs.myLayer;
+  	entropyLayer = entropy.myLayer;
+  	gainLayer = gain.myLayer;
+
+  	net;
   }
 
   override val net = createNet;

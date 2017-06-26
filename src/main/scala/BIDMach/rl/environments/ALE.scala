@@ -467,6 +467,14 @@ class ALE extends edu.berkeley.bid.ALE {
 
 object ALE {
 	val rg = new Random();
+	
+	final val ALEimageModeRaw = 0;
+	final val ALEimageModeGrayscale = 1;
+	final val ALEimageModeRGB = 2;
+	final val ALEimageModeBinarize = 3;
+	final val ALEimageModeColormap = 4;
+	
+	// 0 = Raw, 1 = Grayscale, 2 = RGB, 3 = binarize, 4 = colormap
 
 	def stepAll(envs:Array[ALE],  actions:IMat, obs0:Array[FMat], rewards0:FMat, dones0:FMat):(Array[FMat], FMat, FMat) = {
 		val npar = envs.length;
