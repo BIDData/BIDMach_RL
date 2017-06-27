@@ -13,7 +13,7 @@ import scala.util.hashing.MurmurHash3;
 import java.util.HashMap;
 
 @SerialVersionUID(100L)
-abstract class Environment(val opts:Environment.Options = new Environment.Options) extends Serializable {
+abstract class Environment(val opts:Environment.Opts = new Environment.Options) extends Serializable {
   
   val VALID_ACTIONS:IMat;
   
@@ -29,7 +29,11 @@ abstract class Environment(val opts:Environment.Options = new Environment.Option
 
 object Environment {
   
-  class Options extends BIDMat.Opts {
+  trait Opts extends BIDMat.Opts {
+  	var endEpochAtReward = false;
+  }
+  
+  class Options extends Opts {
     
   }
 }

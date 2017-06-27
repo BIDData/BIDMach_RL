@@ -25,7 +25,6 @@ class NPGalgorithm(
 	
 	var VALID_ACTIONS:IMat = null;
 	var nactions = 0;
-	var obs0:FMat = null;
 	var total_steps = 0;
 	var block_reward = 0f;
 	var total_reward = 0f;
@@ -38,6 +37,7 @@ class NPGalgorithm(
 	var rbaseline0 = 0f;
 	var igame = 0;
 	var state:FMat = null;
+	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
 	var save_length = 10000;
@@ -190,7 +190,9 @@ class NPGalgorithm(
 
   			times(3) = toc;
 
-  			dones <-- (dones + (rewards != 0f) > 0f);
+  			if (envs(0).opts.endEpochAtReward) {
+  				dones <-- (dones + (rewards != 0f) > 0f);
+  			}
 
   			if (sum(dones).v > 0) rbaseline = opts.baseline_decay * rbaseline + (1-opts.baseline_decay) * (sum(rewards).v / sum(dones).v);
   			if (! dobaseline && rbaseline - rbaseline0 > baselinethresh * (envs(0).score_range(1) - envs(0).score_range(0))) {
@@ -265,7 +267,7 @@ object NPGalgorithm {
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
-  	var save_length = 10000;
+  	var save_length = 100000;
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight

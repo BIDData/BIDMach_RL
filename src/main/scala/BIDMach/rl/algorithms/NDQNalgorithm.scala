@@ -191,7 +191,9 @@ class NDQNalgorithm(
 
   			times(3) = toc;
 
-  			dones <-- (dones + (rewards != 0f) > 0f);
+  			if (envs(0).opts.endEpochAtReward) {
+  				dones <-- (dones + (rewards != 0f) > 0f);
+  			}
 
   			if (sum(dones).v > 0) rbaseline = opts.baseline_decay * rbaseline + (1-opts.baseline_decay) * (sum(rewards).v / sum(dones).v);
   			if (! dobaseline && rbaseline - rbaseline0 > baselinethresh * (envs(0).score_range(1) - envs(0).score_range(0))) {
