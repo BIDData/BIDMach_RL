@@ -47,6 +47,7 @@ opts.nactions = 3;
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
 envopts.rom_name="Pong.bin";                 
+envopts.endEpochAtReward = true;          
 envopts.height = 80;
 envopts.width = 80;
 envopts.xoff = 0;
