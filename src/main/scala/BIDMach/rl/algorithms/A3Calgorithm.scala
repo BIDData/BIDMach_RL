@@ -147,7 +147,7 @@ class A3Calgorithm(
   	tic;
   	var istep = ndqn;
   	myLogger.info("Started Training");
-  	while (istep < opts.nsteps && !done) {
+  	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                // update the decayed learning rate
   		val temp = temperatures(istep);                                // get an epsilon for the eps-greedy policy
