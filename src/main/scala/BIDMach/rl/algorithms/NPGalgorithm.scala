@@ -152,6 +152,7 @@ class NPGalgorithm(
 
   	tic;
   	var istep = ndqn;
+  	myLogger.info("Started Training");
   	while (istep < opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                          // Update the decayed learning rate
@@ -161,7 +162,7 @@ class NPGalgorithm(
   		q_estimator.setConsts2(temp, opts.entropy_weight);
   		t_estimator.setConsts2(temp, opts.entropy_weight);
 
-  		if (istep % targwin== 0) t_estimator.update_from(q_estimator);           // Update the target estimator if needed    
+  		if (istep % targwin == 0) t_estimator.update_from(q_estimator);           // Update the target estimator if needed    
 
   		var i = 0;
   		while (i < ndqn && !done) {

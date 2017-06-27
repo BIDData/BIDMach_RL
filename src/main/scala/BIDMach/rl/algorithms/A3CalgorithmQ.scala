@@ -146,6 +146,7 @@ class A3CalgorithmQ(
 
   	tic;
   	var istep = ndqn;
+  	myLogger.info("Started Training");
   	while (istep < opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                // update the decayed learning rate
@@ -247,6 +248,9 @@ class A3CalgorithmQ(
 
 object A3CalgorithmQ {
   trait Opts extends Algorithm.Opts {
+    
+  	logfile = "logA3CQ.txt";
+    tensorFormat = Net.TensorNCHW;
     
     var nsteps = 400000;                             // Number of steps to run (game actions per environment)
   	var ndqn = 5;                                    // Number of DQN steps per update

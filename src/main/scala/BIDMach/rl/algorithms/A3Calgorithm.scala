@@ -146,6 +146,7 @@ class A3Calgorithm(
 
   	tic;
   	var istep = ndqn;
+  	myLogger.info("Started Training");
   	while (istep < opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                // update the decayed learning rate
