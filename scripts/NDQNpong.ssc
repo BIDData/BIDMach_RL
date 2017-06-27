@@ -1,4 +1,5 @@
-// Run this script from the scipts directory, or edit the rom path below to an absolute path. 
+// Run this script from the BIDMach_RL/scipts directory, or edit the rom path below to an absolute path. 
+// Game roms should be in BIDMach_RL/roms for the default path to work. 
 
 val rom_dir = "../roms/";
 
@@ -7,13 +8,13 @@ val npar = 16;                                  // Number of parallel environmen
 class ModelOpts extends NDQNalgorithm.Options with DQNestimator.Opts;
 
 val opts = new ModelOpts;                      // Model options
-opts.entropy_weight = 1e-3f;                   // Entropy regularization weight
+opts.entropy_weight = 1e-4f;                   // Entropy regularization weight
 opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for optimizer
 opts.baseline_decay = 0.9999f;                 // Baseline reward decay
 opts.gsq_decay = 0.99f;                        // Squared gradient memory decay factor for MSProp
 
-opts.nsteps = 400000;                          // Number of steps to run (game actions per environment)
+opts.nsteps = 500000;                          // Number of steps to run (game actions per environment)
 opts.ndqn = 5;                                 // Number of DQN steps per update
 opts.target_window = 50;                       // Interval to update target estimator from q-estimator
 opts.print_steps = 10000;                      // Number of steps between printouts
@@ -31,8 +32,8 @@ opts.lr_schedule = (0f \ 3e-6f on
 		    0.9f \ 1e-10f on
 		    1f \ 1e-10f); 
 
-opts.eps_schedule = (0f \ 0.2f on 
-		     0.8f \ 0.02f on 
+opts.eps_schedule = (0f \ 0.3f on 
+		     0.8f \ 0.03f on 
 		     0.9f \ 0.01f on
 		     0.9f \ 0.0001f on
                      1f \ 0.0001f);
@@ -72,6 +73,8 @@ for (i <- 0 until npar) {
 val model = new NDQNalgorithm(envs, AtariEnvironment.stepAll, DQNestimator.build, opts);
 
 model.startup;
+
+println("\nRunning training in the background.\nSaving to file '%s' in the current directory.\nExamine the 'model' variable to track learning state.\n" format opts.logfile);
 
 model.launchTrain
 // model.train
