@@ -25,7 +25,6 @@ class NDQNalgorithm(
 	
 	var VALID_ACTIONS:IMat = null;
 	var nactions = 0;
-	var obs0:FMat = null;
 	var total_steps = 0;
 	var block_reward = 0f;
 	var total_reward = 0f;
@@ -38,9 +37,10 @@ class NDQNalgorithm(
 	var rbaseline0 = 0f;
 	var igame = 0;
 	var state:FMat = null;
+	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
-	var save_length = 10000;
+	var save_length = 0;
 	var saved_frames:FMat = null;
 	var saved_actions:IMat = null;
 	var saved_preds:FMat = null; 
@@ -152,7 +152,8 @@ class NDQNalgorithm(
 
   	tic;
   	var istep = ndqn;
-  	while (istep < opts.nsteps && !done) {
+  	myLogger.info("Started Training")
+  	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                          // Update the decayed learning rate
   		val temp = temperatures(istep);                                          // Current temperature 
@@ -214,7 +215,8 @@ class NDQNalgorithm(
   		}
   		t_estimator.predict(new_state);
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
-  		val v_next = q_next dot q_prob;
+//  		val v_next = q_next dot q_prob;
+  		val v_next = maxi(q_next);
   		times(5) = toc;
 
   		reward_memory(ndqn-1,?) = done_memory(ndqn-1,?) *@ reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
@@ -268,7 +270,7 @@ object NDQNalgorithm {
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
-  	var save_length = 10000;
+  	var save_length = 100000;
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight

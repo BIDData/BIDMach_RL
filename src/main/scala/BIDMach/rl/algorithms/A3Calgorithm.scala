@@ -25,7 +25,6 @@ class A3Calgorithm(
 	
 	var VALID_ACTIONS:IMat = null;
 	var nactions = 0;
-	var obs0:FMat = null;
 	var total_steps = 0;
 	var block_reward = 0f;
 	var total_reward = 0f;
@@ -38,6 +37,7 @@ class A3Calgorithm(
 	var rbaseline0 = 0f;
 	var igame = 0;
 	var state:FMat = null;
+	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
 	var save_length = 10000;
@@ -251,12 +251,15 @@ class A3Calgorithm(
 object A3Calgorithm {
   trait Opts extends Algorithm.Opts {
     
+  	logfile = "logA3C.txt";
+    tensorFormat = Net.TensorNCHW;
+    
     var nsteps = 400000;                             // Number of steps to run (game actions per environment)
-  	var ndqn = 5;                                    // Number of DQN steps per update
+  	var ndqn = 5;                                    // Number of steps per update
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
-  	var save_length = 10000;
+  	var save_length = 100000;                        // How much history to save in the history buffer
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var policygrad_weight = 0.3f;                    // Weight of policy gradient compared to regression loss

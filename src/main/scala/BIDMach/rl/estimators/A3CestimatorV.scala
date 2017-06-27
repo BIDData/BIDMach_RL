@@ -64,16 +64,16 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
 	  val eps =     const(1e-6f);
 
 	  // Convolution layers
-	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3);
+	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,hasBias=opts.hasBias);
 	  val relu1 =   relu(conv1)(inplace);
-	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0);
+	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias);
 	  val relu2 =   relu(conv2)(inplace);
 
 	  // FC/reward prediction layers
-	  val fc3 =     linear(relu2)(outdim=opts.nhidden3);
+	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
 	  val relu3 =   relu(fc3)(inplace); 
-	  val ppreds =  linear(relu3)(outdim=opts.nactions);
-	  val vpreds =  linear(relu3)(outdim=1);
+	  val ppreds =  linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias);
+	  val vpreds =  linear(relu3)(outdim=1,hasBias=opts.hasBias);
 
 	  // Probability layers
 	  val probs =   softmax(ppreds *@ invtemp); 
