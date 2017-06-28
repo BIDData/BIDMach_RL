@@ -10,7 +10,7 @@ val npar = 16;                                  // Number of parallel environmen
 class ModelOpts extends A3CalgorithmQ.Options with A3CestimatorQ.Opts;
 
 val opts = new ModelOpts;                      // Model options
-opts.nsteps = 400000;                          // Number of steps to run (game actions per environment)
+opts.nsteps = 500000;                          // Number of steps to run (game actions per environment)
 opts.ndqn = 5;                                 // Number of DQN steps per update
 opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.print_steps = 10000;                      // Number of steps between printouts
@@ -19,6 +19,10 @@ opts.init_moves = 4000;                        // Upper bound on random number o
 
 opts.policygrad_weight = 0.3f;
 opts.entropy_weight = 1e-4f;                   // Entropy regularization weight
+opts.baseline_decay = 0.9999f;                 // Baseline reward decay
+opts.gsq_decay = 0.99f;                        // Square gradient Decay factor for MSProp
+//opts.vel_decay = 0.9f;                         // Momentum decay
+//opts.clipByValue = 1f;                         // gradient clipping
 
 opts.lr_schedule = (0f \ 3e-6f on
 		   0.8f \ 3e-6f on
@@ -26,16 +30,12 @@ opts.lr_schedule = (0f \ 3e-6f on
 		   0.9f \ 1e-10f on
 		   1f \ 1e-10f); 
 
-opts.temp_schedule = (0f \ 1f on 
-		     0.8f \ 0.5f on 
-		     0.9f \ 0.2f on
+opts.temp_schedule = (0f \ 0.5f on 
+		     0.8f \ 0.1f on 
+		     0.9f \ 0.01f on
 		     0.9f \ 0.001f on
                      1f \ 0.001f);
 
-opts.baseline_decay = 0.9999f;                 // Baseline reward decay
-opts.gsq_decay = 0.99f;                        // Decay factor for MSProp
-opts.vel_decay = 0.9f;                         // Momentum decay
-opts.clipByValue = 1f;                         // gradient clipping
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;
@@ -45,13 +45,14 @@ opts.nactions = 3;
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
 envopts.rom_name="Pong.bin";                 
+envopts.endEpochAtReward = true;          
 envopts.height = 80;
 envopts.width = 80;
 envopts.xoff = 0;
 envopts.yoff = 35;
 envopts.pool = false;
 envopts.shrink = true;
-envopts.mode = 3;
+envopts.mode = ALE.ALEimageModeBinarize;
 envopts.background = 34;
 envopts.frameskip = irow(4,4);
 envopts.repeat_action_probability = 0f;
@@ -67,4 +68,6 @@ val model = new A3CalgorithmQ(envs, AtariEnvironment.stepAll, A3CestimatorQ.buil
 
 model.startup;
 
-model.train;
+println("\nRunning training in the background.\nSaving to file '%s' in the current directory.\nExamine the 'model' variable to track learning state.\n" format opts.logfile);
+
+model.launchTrain;

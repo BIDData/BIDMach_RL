@@ -8,7 +8,7 @@ val npar = 16;                                  // Number of parallel environmen
 class ModelOpts extends A3Calgorithm.Options with A3CestimatorV.Opts;
 
 val opts = new ModelOpts;                      // Model options
-opts.policygrad_weight = 0.5f;
+opts.policygrad_weight = 1f;
 opts.entropy_weight = 1e-3f;                   // Entropy regularization weight
 opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.baseline_decay = 0.9999f;                 // Baseline reward decay
