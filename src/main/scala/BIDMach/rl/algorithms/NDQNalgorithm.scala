@@ -50,7 +50,7 @@ class NDQNalgorithm(
 	var t_estimator:Estimator = null;
 	val dtimes = zeros(1,7);
 	val times = zeros(1,8);
-
+    var istep = 0;
 	
 	def startup {
 	  tic;
@@ -151,7 +151,7 @@ class NDQNalgorithm(
   	reward_plot = zeros(1, nsteps/printsteps0);
 
   	tic;
-  	var istep = ndqn;
+  	istep = ndqn;
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
