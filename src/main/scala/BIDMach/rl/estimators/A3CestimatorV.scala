@@ -31,8 +31,6 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
   var entropyLayer:Layer = null;
   var lossLayer:Layer = null;
   var nentropy = 0;
-
-  val inplace = true;
   
   override def formatStates(s:FMat) = {
     if (net.opts.tensorFormat == Net.TensorNCHW) {
@@ -65,13 +63,13 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,hasBias=opts.hasBias);
-	  val relu1 =   relu(conv1)(inplace);
+	  val relu1 =   relu(conv1)(inplace=opts.inplace);
 	  val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias);
-	  val relu2 =   relu(conv2)(inplace);
+	  val relu2 =   relu(conv2)(inplace=opts.inplace);
 
 	  // FC/reward prediction layers
 	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
-	  val relu3 =   relu(fc3)(inplace); 
+	  val relu3 =   relu(fc3)(inplace=opts.inplace); 
 	  val ppreds =  linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias);
 	  val vpreds =  linear(relu3)(outdim=1,hasBias=opts.hasBias);
 
@@ -133,6 +131,7 @@ object A3CestimatorV {
     var nhidden2 = 32;
     var nhidden3 = 256;
     var nactions = 3;
+    tensorFormat = Net.TensorNCHW;
   }
   
   class Options extends Opts {}

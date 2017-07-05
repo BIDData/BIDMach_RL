@@ -24,8 +24,6 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
   var gainLayer:Layer = null;
   var nentropy = 0;
 
-  val inplace = true;
-
   override def formatStates(s:FMat) = {
     if (net.opts.tensorFormat == Net.TensorNCHW) {
     	s.reshapeView(s.dims(2), s.dims(0), s.dims(1), s.dims(3));
@@ -62,13 +60,13 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 
   	// Convolution layers
   	val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,hasBias=opts.hasBias);
-  	val relu1 =   relu(conv1)(inplace);
+  	val relu1 =   relu(conv1)(inplace=opts.inplace);
   	val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias);
-  	val relu2 =   relu(conv2)(inplace);
+  	val relu2 =   relu(conv2)(inplace=opts.inplace);
 
   	// FC/reward prediction layers
   	val fc3 =     linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
-  	val relu3 =   relu(fc3)(inplace);
+  	val relu3 =   relu(fc3)(inplace=opts.inplace);
   	val preds =   linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias); 
 
   	// Probability/ advantage layers
@@ -131,6 +129,7 @@ object PGestimator {
     var nhidden2 = 32;
     var nhidden3 = 256;
     var nactions = 3;
+    tensorFormat = Net.TensorNCHW;
   }
   
   class Options extends Opts {}
