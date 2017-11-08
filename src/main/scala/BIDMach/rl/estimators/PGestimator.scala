@@ -46,9 +46,9 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
   	Net.initDefaultNodeSet;
 
   	// Input layers 
-  	val in =      input;
-  	val actions = input;
-  	val target =  input;
+  	val in =      input();
+  	val actions = input();
+  	val target =  input();
 
   	// Settable param layers;
   	val temp  =   const(1f);

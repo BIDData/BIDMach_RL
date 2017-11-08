@@ -21,6 +21,8 @@ LIBDIR="${BIDMACH_ROOT}/lib"
 
 JCUDA_VERSION=`echo lib/jcuda-natives-*.jar | sed 's/.*jcuda-natives-//' | sed 's/-.*\.jar//'`
 BIDMAT_VERSION=`echo lib/BIDMat-*-cpu-*.jar | sed 's/.*BIDMat-//' | sed 's/-cpu.*\.jar//'`
+GDX_VERSION=`echo lib/gdx-platform-*.jar | sed 's/.*gdx-platform-//' | sed 's/-natives-desktop.jar//'`
+echo $GDX_VERSION
 
 OSS=`uname -a`
 if [ "$ARCH" = "" ]; then
@@ -70,7 +72,12 @@ for lib in jcuda jcublas jcufft jcurand jcusolver jcusparse jcudnn; do
     JCUDA_LIBS="${JCUDA_LIBS};${LIBDIR}/${lib}-${JCUDA_VERSION}.jar;${LIBDIR}/${lib}-natives-${JCUDA_VERSION}-${OSS}-${ARCH}.jar"
 done
 
-ALL_LIBS=";${BIDMACH_ROOT}/BIDMach.jar;${BIDMACH_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/tools.jar"
+GDX_LIBS=""
+for lib in gdx gdx-box2d gdx-bullet; do
+    GDX_LIBS="${GDX_LIBS};${LIBDIR}/${lib}-${GDX_VERSION}.jar;${LIBDIR}/${lib}-platform-${GDX_VERSION}-natives-desktop.jar"
+done
+
+ALL_LIBS=";${BIDMACH_ROOT}/BIDMach.jar;${BIDMACH_LIBS};${JCUDA_LIBS};${GDX_LIBS};${JAVA_HOME}/lib/tools.jar"
 
 if [ "$OSS" = "windows" ]; then
     if [ ! "${CUDA_PATH}" = "" ]; then

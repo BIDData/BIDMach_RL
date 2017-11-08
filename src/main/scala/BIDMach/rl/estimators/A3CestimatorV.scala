@@ -47,10 +47,10 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
 	  Net.initDefaultNodeSet;
 
 	  // Input layers 
-	  val in =      input;
-	  val actions = input;
-	  val vtarget =  input;
-	  val atarget =  input;
+	  val in =      input();
+	  val actions = input();
+	  val vtarget =  input();
+	  val atarget =  input();
 	  
 	  // Settable param layers;
 	  invtemp  =    const(1f);

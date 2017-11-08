@@ -46,9 +46,9 @@ class A3CestimatorQ(opts:A3CestimatorQ.Opts = new A3CestimatorQ.Options) extends
 	  Net.initDefaultNodeSet;
 
 	  // Input layers 
-	  val in =      input;
-	  val actions = input;
-	  val target =  input;
+	  val in =      input();
+	  val actions = input();
+	  val target =  input();
 	  
 	  // Settable param layers;
 	  invtemp  =    constant(1f);

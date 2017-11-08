@@ -38,9 +38,9 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  Net.initDefaultNodeSet;
 
 	  // Input layers 
-	  val in =      input;
-	  val actions = input;
-	  val target =  input;
+	  val in =      input();
+	  val actions = input();
+	  val target =  input();
 	  
 	  // Settable param layers;
 	  invtemp  =    const(1f);
