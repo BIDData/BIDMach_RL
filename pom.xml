@@ -6,7 +6,7 @@
   <groupId>BIDMach</groupId>
   <artifactId>BIDMachRL</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.8-cuda8.0beta</version>
+  <version>2.0.11-cuda8.0beta</version>
   <name>BIDMachRL</name>
   <description>Reinforcement Learning for BIDMach</description>
   <properties>
@@ -167,6 +167,26 @@
       <groupId>BIDMach</groupId>
       <artifactId>BIDMach</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.badlogicgames.gdx</groupId>
+      <artifactId>gdx-bullet</artifactId>
+      <version>1.9.6</version>
+    </dependency>
+    <dependency>
+      <groupId>com.badlogicgames.gdx</groupId>
+      <artifactId>gdx-bullet-platform</artifactId>
+      <version>1.9.6</version>
+    </dependency>
+    <dependency>
+      <groupId>com.badlogicgames.gdx</groupId>
+      <artifactId>gdx-box2d</artifactId>
+      <version>1.9.6</version>
+    </dependency>
+    <dependency>
+      <groupId>com.badlogicgames.gdx</groupId>
+      <artifactId>gdx-box2d-platform</artifactId>
+      <version>1.9.6</version>
     </dependency>
   </dependencies>
   <build>
