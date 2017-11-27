@@ -257,7 +257,6 @@ object A3Calgorithm {
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
-  	var save_length = 100000;                        // How much history to save in the history buffer
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var policygrad_weight = 0.3f;                    // Weight of policy gradient compared to regression loss
