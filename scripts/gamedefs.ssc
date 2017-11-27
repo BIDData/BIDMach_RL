@@ -1,0 +1,21 @@
+
+gamename match {
+case "Breakout" => {
+    envopts.rom_name="Breakout.bin";       
+    envopts.endEpochAtReward = false;          
+    envopts.mode = ALE.ALEimageModeBinarize;
+    envopts.background = 0;
+    envopts.score_range = row(0f,400f);
+    envopts.frameskip = irow(4,4);
+    envopts.repeat_action_probability = 0f;
+}
+case "Pong" => {
+    envopts.rom_name="Pong.bin";       
+    envopts.endEpochAtReward = true;          
+    envopts.mode = ALE.ALEimageModeBinarize;
+    envopts.background = 34;
+    envopts.score_range = row(-1f,1f);
+    envopts.frameskip = irow(4,4);
+    envopts.repeat_action_probability = 0f;
+}
+}
