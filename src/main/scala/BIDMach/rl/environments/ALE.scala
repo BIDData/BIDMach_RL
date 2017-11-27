@@ -60,7 +60,7 @@ class ALE extends edu.berkeley.bid.ALE {
   
   // The Standard Grayscale Palette gives very low constrast on many games. This map converts color angle into the output value.
   
-  def createColorMap:Array[Float] = {
+  def createColormap:Array[Float] = {
     colormap = new Array[Float](256);
     val palette = getScreenPaletteRGB(null);
     for (i <- 0 until 256) {
@@ -151,6 +151,7 @@ class ALE extends edu.berkeley.bid.ALE {
 				  }
 				  case 4 => {                                // Pool and shrink a colormapped image
 				  	val cc = 1f/4;
+				  	if (colormap.asInstanceOf[AnyRef] == null) colormap = createColormap;
 				  	while (i < height*2) {
 				  		val irow = (i + yoff) * inwidth;
 				  		val irow2 = (i >> 1) * width;
