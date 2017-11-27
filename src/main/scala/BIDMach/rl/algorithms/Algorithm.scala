@@ -1,6 +1,6 @@
 package BIDMach.rl.algorithms;
 
-import BIDMat.{Mat,SBMat,CMat,DMat,FMat,IMat,LMat,HMat,GMat,GDMat,GIMat,GLMat,GSMat,GSDMat,SMat,SDMat}
+import BIDMat.{Mat,SBMat,CMat,DMat,FMat,IMat,Image,LMat,HMat,GMat,GDMat,GIMat,GLMat,GSMat,GSDMat,SMat,SDMat}
 import BIDMat.MatFunctions._
 import BIDMat.SciFunctions._
 import BIDMach.networks.layers._;
@@ -24,6 +24,13 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
   var done = false;
   var paused = false;
   var pauseAt = -1L;
+  var istep = 0;
+  
+  var save_length = 0;
+	var saved_frames:FMat = null;
+	var saved_actions:IMat = null;
+	var saved_preds:FMat = null; 
+	var reward_plot:FMat = null;
 	
   def startup;
   
@@ -42,6 +49,16 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
     done = true;
   }
   
+  def animate(tt:Float = 0.1f, iscale:Int=255) = {
+    val h = saved_frames.dims(0);
+    val w = saved_frames.dims(1);
+    val img = Image(saved_frames(?,?,0).reshapeView(h, w)*iscale);
+    img.show;
+    for (i <- 1 until saved_frames.dims(2)) {
+      Thread.sleep((tt*1000).toInt);
+      img.redraw(saved_frames(?,?,i).reshapeView(h, w)*iscale)
+    }
+  }
   
   def launchTrain = {
     val tmp = myLogger;
@@ -71,6 +88,7 @@ object Algorithm {
   	waitsteps = -1;
   	var logfile = "log.txt";
   	var nthreads = 4;
+  	var save_length = 100000;
   }
   
   class Options extends Opts {}   

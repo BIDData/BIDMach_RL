@@ -40,17 +40,10 @@ class NDQNalgorithm(
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
-	var save_length = 0;
-	var saved_frames:FMat = null;
-	var saved_actions:IMat = null;
-	var saved_preds:FMat = null; 
-	var reward_plot:FMat = null;
-	
 	var q_estimator:Estimator = null;
 	var t_estimator:Estimator = null;
 	val dtimes = zeros(1,7);
 	val times = zeros(1,8);
-    var istep = 0;
 	
 	def startup {
 	  tic;
@@ -272,7 +265,6 @@ object NDQNalgorithm {
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
-  	var save_length = 100000;
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
