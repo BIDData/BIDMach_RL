@@ -40,11 +40,6 @@ class A3Calgorithm(
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
-	var save_length = 10000;
-	var saved_frames:FMat = null;
-	var saved_actions:IMat = null;
-	var saved_preds:FMat = null; 
-	var reward_plot:FMat = null;
 	val dtimes = zeros(1,7);
 	
 	var estimator:Estimator = null;

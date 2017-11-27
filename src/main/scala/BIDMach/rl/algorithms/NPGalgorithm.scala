@@ -40,12 +40,6 @@ class NPGalgorithm(
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
-	var save_length = 10000;
-	var saved_frames:FMat = null;
-	var saved_actions:IMat = null;
-	var saved_preds:FMat = null; 
-	var reward_plot:FMat = null;
-	
 	var q_estimator:Estimator = null;
 	var t_estimator:Estimator = null;
 	val dtimes = zeros(1,7);
