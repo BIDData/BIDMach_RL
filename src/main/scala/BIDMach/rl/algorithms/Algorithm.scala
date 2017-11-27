@@ -22,6 +22,7 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
 	var myLogger = Mat.consoleLogger;
 	var fut:Future[_] = null;
   var done = false;
+  var animation_done = true;
   var paused = false;
   var pauseAt = -1L;
   var istep = 0;
@@ -49,15 +50,27 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
     done = true;
   }
   
-  def animate(tt:Float = 0.01f, iscale:Int=255) = {
+  def animate(rate:Float = 100f, iscale:Int=255) = {
     val h = saved_frames.dims(0);
     val w = saved_frames.dims(1);
     val img = Image(saved_frames(?,?,0).reshapeView(h, w)*iscale);
     img.show;
-    for (i <- 1 until saved_frames.dims(2)) {
-      Thread.sleep((tt*1000).toInt);
-      img.redraw(saved_frames(?,?,i).reshapeView(h, w)*iscale)
+    animation_done = false;
+    val runme = new Runnable {
+      def run() = {
+        var i = 0;
+        while (!animation_done && i < saved_frames.dims(2)) {
+        	img.redraw(saved_frames(?,?,i).reshapeView(h, w)*iscale);
+        	Thread.sleep((1000f/rate).toInt);
+        	i += 1;
+        }        
+      }
     }
+    fut = Image.getService.submit(runme);
+  }
+  
+  def stop_animation() = {
+    animation_done = true;
   }
   
   def launchTrain = {
