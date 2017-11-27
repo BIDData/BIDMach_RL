@@ -50,7 +50,7 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
     done = true;
   }
   
-  def animate(rate:Float = 100f, iscale:Int=255) = {
+  def animate(rate:Float = 50f, iscale:Int=255) = {
     val h = saved_frames.dims(0);
     val w = saved_frames.dims(1);
     val img = Image(saved_frames(?,?,0).reshapeView(h, w)*iscale);
@@ -69,7 +69,7 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
     fut = Image.getService.submit(runme);
   }
   
-  def stop_animation() = {
+  def stop_animation = {
     animation_done = true;
   }
   
@@ -101,7 +101,7 @@ object Algorithm {
   	waitsteps = -1;
   	var logfile = "log.txt";
   	var nthreads = 4;
-  	var save_length = 100000;
+  	var save_length = 10000;
   }
   
   class Options extends Opts {}   
