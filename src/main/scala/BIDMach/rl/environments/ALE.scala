@@ -224,6 +224,7 @@ class ALE extends edu.berkeley.bid.ALE {
 		        }
 		      }
 		      case 4 => {                                // Pool a colormapped image
+			if (colormap.asInstanceOf[AnyRef] == null) colormap = createColormap;	
 		        while (i < height) {
 		      		val irow = (i + yoff) * inwidth;
 		      		val irow2 = i * width;
@@ -311,6 +312,7 @@ class ALE extends edu.berkeley.bid.ALE {
 		      case 4 => {                                // Shrink a colormapped image
 		      	out.clear;
 		      	val cc = 1f/4;
+			if (colormap.asInstanceOf[AnyRef] == null) colormap = createColormap;
 		      	while (i < height*2) {
 		      		val irow = (i + yoff) * inwidth;
 		      		val irow2 = (i >> 1) * width;
@@ -390,6 +392,7 @@ class ALE extends edu.berkeley.bid.ALE {
 		      	}		 		        
 		      }
 		      case 4 => {                                    // Copy a colormapped image
+                         if (colormap.asInstanceOf[AnyRef] == null) colormap = createColormap;
 		         while (i < height) {
 		      		val irow = (i + yoff) * inwidth;
 		      		val irow2 = i * width;
