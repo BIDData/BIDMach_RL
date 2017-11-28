@@ -60,7 +60,8 @@ class NDQNalgorithm(
 	  save_length = opts.save_length;
 	  saved_frames = zeros(envs(0).statedims\save_length);
 	  saved_actions = izeros(1, save_length);
-	  saved_preds = zeros(nactions\save_length);
+	  saved_rewards = zeros(1, save_length);
+	  saved_preds = zeros(nactions, save_length);
 	  
 	  print("Initializing Environments")
 	  for (i <- 0 until npar) {
@@ -177,6 +178,7 @@ class NDQNalgorithm(
   			saved_frames(?,?,igame) = obs(0).reshapeView(envs(0).statedims\1);
   			saved_actions(0,igame) = actions(0);
   			saved_preds(?,igame) = preds(?,0);
+  			saved_rewards(0,igame) = rewards(0);
   			igame = (igame+1) % save_length;
   			
   			total_epochs += sum(dones).v.toInt;

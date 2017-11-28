@@ -66,7 +66,7 @@ object AtariEnvironment {
     var rom_dir = "/code/ALE/roms/"
     var rom_name = "Pong.bin";
     var score_range = row(-1f,1f);
-    var mode = 1;
+    var mode = ALE.ALEimageModeGrayscale;
     var shrink = true;
     var pool = true;
     var fire_to_start = false;
