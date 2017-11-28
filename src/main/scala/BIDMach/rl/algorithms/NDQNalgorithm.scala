@@ -216,9 +216,9 @@ class NDQNalgorithm(
   		val v_next = maxi(q_next);
   		times(5) = toc;
 
-  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
+  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Propagate rewards from Q-values at non-final states.
   		for (i <- (ndqn-2) to 0 by -1) {
-  			// Propagate rewards back in time. Actual rewards override predicted rewards at end of epoch.  
+  			// Propagate rewards back in time, but not across epochs. 
   			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
   		}
 
