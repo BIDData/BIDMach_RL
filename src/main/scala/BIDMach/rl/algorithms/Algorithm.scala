@@ -59,7 +59,8 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
     val runme = new Runnable {
       def run() = {
         var i = 0;
-        while (!animation_done && i < saved_frames.dims(2)) {
+        while (!animation_done) {
+          if (i >= saved_frames.dims(2)) i = 0;
         	img.redraw(saved_frames(?,?,i).reshapeView(h, w)*iscale);
         	Thread.sleep((1000f/rate).toInt);
         	i += 1;
