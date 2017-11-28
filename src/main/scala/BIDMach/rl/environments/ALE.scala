@@ -417,7 +417,7 @@ class ALE extends edu.berkeley.bid.ALE {
   def copyObs():FMat = copyObs(null);
 
   def step(action:Int, out0:FMat):(FMat, Float, Boolean) = {
-  	val nsteps = frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
+  	val nsteps = 1 + frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
   	if (dims == null) {
   		dims = getScreenDims
   	}
