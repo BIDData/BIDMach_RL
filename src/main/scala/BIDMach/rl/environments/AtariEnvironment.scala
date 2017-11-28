@@ -29,6 +29,7 @@ class AtariEnvironment(override val opts:AtariEnvironment.Options = new AtariEnv
   		ale.yoff = opts.yoff;
   		ale.width = opts.width;
   		ale.height = opts.height;
+  		ale.fire_to_start = opts.fire_to_start;
   }
   
   copyOpts;
@@ -68,6 +69,7 @@ object AtariEnvironment {
     var mode = 1;
     var shrink = true;
     var pool = true;
+    var fire_to_start = false;
     var background = 34;
     var xoff = 0;
     var yoff = 17;

@@ -14,6 +14,7 @@ class ALE extends edu.berkeley.bid.ALE {
   var mode = 1;           // 0 = Raw, 1 = Grayscale, 2 = RGB, 3 = binarize, 4 = colormap
   var pool = true;      
   var shrink = true;
+  var fire_to_start = false;
   var background = 0;
   var xoff = 0;
   var yoff = 17;
@@ -454,6 +455,7 @@ class ALE extends edu.berkeley.bid.ALE {
 
   def reset(out0:FMat):FMat = {
   		reset_game();
+  		if (fire_to_start) act(1);
   		buffer = getBufferData(buffer);
   		if (pool) buffer2 = getBufferData(buffer2);
   		copyObs(out0);
@@ -486,7 +488,7 @@ object ALE {
 		val rewards = if (rewards0.asInstanceOf[AnyRef] == null) zeros(1, npar) else rewards0;
 		val dones = if (dones0.asInstanceOf[AnyRef] == null) zeros(1, npar) else dones0;
 		(0 until npar).par.foreach((i) => {
-			val nsteps = envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
+			val nsteps = 1 + envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
 			var reward = 0f;
 			for (j <- 0 until nsteps) {
 			  reward += envs(i).act(actions(i));
@@ -496,7 +498,12 @@ object ALE {
 			envs(i).buffer = envs(i).getBufferData(envs(i).buffer);
 			obs(i) = envs(i).copyObs(obs(i));
 			dones(i) = if (envs(i).game_over()) 1f else 0f;
-			if (dones(i) == 1f) envs(i).reset_game();
+			if (dones(i) == 1f) {
+			  envs(i).reset_game();
+			  if (envs(i).fire_to_start) {
+			    rewards(i) += envs(i).act(1);
+			  }
+			}
 		})
 		(obs, rewards, dones)
 	};
@@ -513,12 +520,17 @@ object ALE {
 			rewards(i) = (0 until nsteps).map((j) => envs(i).act(actions(i))).sum;
 			obs(i) = envs(i).getBufferData(envs(i).buffer);
 			dones(i) = if (envs(i).game_over()) 1f else 0f;
-			if (dones(i) == 1f) envs(i).reset_game();
+			if (dones(i) == 1f) {
+				envs(i).reset_game();
+				if (envs(i).fire_to_start) {
+					rewards(i) += envs(i).act(1);
+				}
+			}
 		})
 		(obs, rewards, dones)
 	};
 
-	def stepAll2(envs:Array[ALE], actions:IMat):(Array[Array[Byte]], FMat, FMat) = stepAll2(envs, actions, null, null, null);
+		def stepAll2(envs:Array[ALE], actions:IMat):(Array[Array[Byte]], FMat, FMat) = stepAll2(envs, actions, null, null, null);
 }
 
 
