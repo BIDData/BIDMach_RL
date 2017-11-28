@@ -8,7 +8,7 @@ val npar = 16;                                  // Number of parallel environmen
 class ModelOpts extends NDQNalgorithm.Options with DQNestimator.Opts;
 
 val opts = new ModelOpts;                      // Model options
-opts.entropy_weight = 1e-3f;                   // Entropy regularization weight
+opts.entropy_weight = 1e-6f;                   // Entropy regularization weight
 opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for optimizer
 opts.baseline_decay = 0.9999f;                 // Baseline reward decay
@@ -31,7 +31,7 @@ opts.lr_schedule = (0f \ 3e-6f on
 		    0.9f \ 1e-10f on
 		    1f \ 1e-10f); 
 
-opts.eps_schedule = (0f \ 0.3f on 
+opts.eps_schedule = (0f \ 0.5f on 
 		     0.8f \ 0.01f on 
 		     0.9f \ 0.001f on
 		     0.9f \ 0.0001f on
