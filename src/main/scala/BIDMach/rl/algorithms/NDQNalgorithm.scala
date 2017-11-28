@@ -216,11 +216,10 @@ class NDQNalgorithm(
   		val v_next = maxi(q_next);
   		times(5) = toc;
 
-  		val was_reward = (reward_memory != 0f);
-  		reward_memory(ndqn-1,?) = was_reward(ndqn-1,?) *@ reward_memory(ndqn-1,?) + (1f-was_reward(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
+  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
   		for (i <- (ndqn-2) to 0 by -1) {
-  			// Propagate rewards back in time. Actual rewards override predicted rewards. 
-  			reward_memory(i,?) = was_reward(i,?) *@ reward_memory(i,?) + (1f - was_reward(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
+  			// Propagate rewards back in time. Actual rewards override predicted rewards at end of epoch.  
+  			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
   		}
 
   		// Now compute gradients for the states/actions/rewards saved in the table.
