@@ -418,7 +418,7 @@ class ALE extends edu.berkeley.bid.ALE {
   def copyObs():FMat = copyObs(null);
 
   def step(action:Int, out0:FMat):(FMat, Float, Boolean) = {
-  	val nsteps = 1 + frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
+  	val nsteps = frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
   	if (dims == null) {
   		dims = getScreenDims
   	}
@@ -438,7 +438,7 @@ class ALE extends edu.berkeley.bid.ALE {
   def step(action:Int):(FMat, Float, Boolean) = step(action, null);
 
   def step2(action:Int):(Array[Byte], Float, Boolean) = {
-  	val nsteps = 1 + frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
+  	val nsteps = frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
   	if (dims == null) {
   		dims = getScreenDims
   	}
@@ -488,7 +488,7 @@ object ALE {
 		val rewards = if (rewards0.asInstanceOf[AnyRef] == null) zeros(1, npar) else rewards0;
 		val dones = if (dones0.asInstanceOf[AnyRef] == null) zeros(1, npar) else dones0;
 		(0 until npar).par.foreach((i) => {
-			val nsteps = 1 + envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
+			val nsteps = envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
 			var reward = 0f;
 			for (j <- 0 until nsteps) {
 			  reward += envs(i).act(actions(i));
@@ -516,7 +516,7 @@ object ALE {
 		val rewards = if (rewards0.asInstanceOf[AnyRef] == null) zeros(1, npar) else rewards0;
 		val dones = if (dones0.asInstanceOf[AnyRef] == null) zeros(1, npar) else dones0;
 		(0 until npar).par.foreach((i) => {
-			val nsteps = 1 + envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
+			val nsteps = envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
 			rewards(i) = (0 until nsteps).map((j) => envs(i).act(actions(i))).sum;
 			obs(i) = envs(i).getBufferData(envs(i).buffer);
 			dones(i) = if (envs(i).game_over()) 1f else 0f;
