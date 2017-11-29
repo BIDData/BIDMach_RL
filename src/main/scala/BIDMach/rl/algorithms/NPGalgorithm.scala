@@ -60,6 +60,8 @@ class NPGalgorithm(
 	  save_length = opts.save_length;
 	  saved_frames = zeros(envs(0).statedims\save_length);
 	  saved_actions = izeros(1, save_length);
+	  saved_rewards = zeros(1, save_length);
+	  saved_dones = zeros(1, save_length);
 	  saved_preds = zeros(nactions\save_length);
 	  
 	  print("Initializing Environments")
@@ -177,6 +179,8 @@ class NPGalgorithm(
   			}    
   			saved_frames(?,?,igame) = obs(0).reshapeView(envs(0).statedims\1);
   			saved_actions(0,igame) = actions(0);
+  			saved_rewards(0,igame) = rewards(0);
+  			saved_dones(0,igame) = dones(0);
   			saved_preds(?,igame) = preds(?,0);
   			igame = (igame+1) % save_length;
   			
@@ -214,10 +218,10 @@ class NPGalgorithm(
   		val v_next = q_next dot q_prob;
   		times(5) = toc;
 
-  		reward_memory(ndqn-1,?) = done_memory(ndqn-1,?) *@ reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
+  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
   		for (i <- (ndqn-2) to 0 by -1) {
   			// Propagate rewards back in time. Actual rewards override predicted rewards. 
-  			reward_memory(i,?) = done_memory(i,?) *@ reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
+  			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
   		}
 
   		// Now compute gradients for the states/actions/rewards saved in the table.

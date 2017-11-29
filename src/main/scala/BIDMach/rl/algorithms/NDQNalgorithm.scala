@@ -61,6 +61,7 @@ class NDQNalgorithm(
 	  saved_frames = zeros(envs(0).statedims\save_length);
 	  saved_actions = izeros(1, save_length);
 	  saved_rewards = zeros(1, save_length);
+	  saved_dones = zeros(1, save_length);
 	  saved_preds = zeros(nactions, save_length);
 	  
 	  print("Initializing Environments")
@@ -179,6 +180,7 @@ class NDQNalgorithm(
   			saved_actions(0,igame) = actions(0);
   			saved_preds(?,igame) = preds(?,0);
   			saved_rewards(0,igame) = rewards(0);
+  			saved_dones(0,igame) = dones(0);
   			igame = (igame+1) % save_length;
   			
   			total_epochs += sum(dones).v.toInt;
