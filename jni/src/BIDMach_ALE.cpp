@@ -238,6 +238,14 @@ JNIEXPORT jboolean JNICALL Java_edu_berkeley_bid_ALE_game_1over
   return done;
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_lives
+(JNIEnv *env, jobject jale)
+{
+  ALEInterface *alep = getALE(env, jale);
+  int lives = alep->lives();
+  return lives;
+}
+
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_ALE_reset_1game
 (JNIEnv *env, jobject jale)
 {

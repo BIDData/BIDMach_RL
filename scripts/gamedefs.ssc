@@ -8,6 +8,8 @@ case "Breakout" => {
     envopts.score_range = row(0f,400f);
     envopts.frameskip = irow(4,4);
     envopts.repeat_action_probability = 0f;
+    envopts.fire_to_start = true;
+    opts.nactions = 4;
 }
 case "Pong" => {
     envopts.rom_name="Pong.bin";       
@@ -17,5 +19,6 @@ case "Pong" => {
     envopts.score_range = row(-1f,1f);
     envopts.frameskip = irow(4,4);
     envopts.repeat_action_probability = 0f;
+    opts.nactions = 3;
 }
 }

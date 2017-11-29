@@ -14,7 +14,7 @@ opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for 
 opts.baseline_decay = 0.9999f;                 // Baseline reward decay
 opts.gsq_decay = 0.99f;                        // Squared gradient memory decay factor for MSProp
 
-opts.nsteps = 500000;                          // Number of steps to run (game actions per environment)
+opts.nsteps = 2000000;                          // Number of steps to run (game actions per environment)
 opts.ndqn = 5;                                 // Number of DQN steps per update
 opts.target_window = 50;                       // Interval to update target estimator from q-estimator
 opts.print_steps = 10000;                      // Number of steps between printouts
@@ -25,22 +25,15 @@ opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                         // gradient clipping
 
-opts.lr_schedule = (0f \ 3e-6f on
-	  	    0.8f \ 3e-6f on
-		    0.9f \ 3e-7f on
-		    0.9f \ 1e-10f on
-		    1f \ 1e-10f); 
+opts.lr_schedule = (0f \ 1e-6f on
+		    1f \ 1e-6f); 
 
-opts.eps_schedule = (0f \ 0.5f on 
-		     0.8f \ 0.01f on 
+opts.eps_schedule = (0f \ 0.3f on
 		     0.9f \ 0.001f on
-		     0.9f \ 0.0001f on
-                     1f \ 0.0001f);
+                     1f \ 0.001f);
 
 opts.temp_schedule = (0f \ 0.001f on 
-		      0.9f \ 0.001f on
-		      0.9f \ 0.0001f on
-                      1f \ 0.0001f);
+                      1f \ 0.001f);
 
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
@@ -64,6 +57,7 @@ envopts.background = 0;
 envopts.frameskip = irow(4,4);
 envopts.repeat_action_probability = 0f;
 envopts.score_range = row(0f,400f);
+envopts.fire_to_start = true;
 
 val envs = new Array[Environment](npar);
 for (i <- 0 until npar) {
