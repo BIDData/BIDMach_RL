@@ -23,6 +23,8 @@ abstract class Environment(val opts:Environment.Opts = new Environment.Options) 
   
   def statedims:IMat;
   
+  def lives():Int;
+  
   def reset();
   
 }

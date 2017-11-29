@@ -53,6 +53,8 @@ public class ALE implements Serializable {
     public native float act(int action);
 
     public native boolean game_over();
+    
+    public native int lives();
 
     public native int reset_game();
 

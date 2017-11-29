@@ -33,6 +33,7 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
 	var saved_preds:FMat = null; 
 	var saved_rewards:FMat = null;
   var saved_dones:FMat = null;
+  var saved_lives:FMat = null;
 	var reward_plot:FMat = null;
 	
   def startup;

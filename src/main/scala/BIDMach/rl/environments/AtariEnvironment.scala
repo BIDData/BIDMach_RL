@@ -46,6 +46,8 @@ class AtariEnvironment(override val opts:AtariEnvironment.Options = new AtariEnv
   
   def reset() = ale.reset();
   
+  def lives() = ale.lives();
+  
 }
 
 object AtariEnvironment {
