@@ -11,7 +11,6 @@ val opts = new ModelOpts;                      // Model options
 opts.entropy_weight = 1e-6f;                   // Entropy regularization weight
 opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for optimizer
-opts.baseline_decay = 0.9999f;                 // Baseline reward decay
 opts.gsq_decay = 0.99f;                        // Squared gradient memory decay factor for MSProp
 
 opts.nsteps = 2000000;                          // Number of steps to run (game actions per environment)
@@ -45,19 +44,19 @@ opts.logfile = "logNDQNbreakout.txt"
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
 envopts.rom_name="Breakout.bin";       
-envopts.endEpochAtReward = false;          
+envopts.endEpochAtReward = false;       
 envopts.height = 80;
 envopts.width = 80;
 envopts.xoff = 0;
 envopts.yoff = 35;
-envopts.pool = false;
+envopts.pool = true;
 envopts.shrink = true;
 envopts.mode = ALE.ALEimageModeBinarize;
 envopts.background = 0;
 envopts.frameskip = irow(4,4);
 envopts.repeat_action_probability = 0f;
 envopts.limit_reward_incr = row(0f,1f);
-envopts.fire_to_start = true;
+envopts.fire_to_start = false;
 
 val envs = new Array[Environment](npar);
 for (i <- 0 until npar) {
