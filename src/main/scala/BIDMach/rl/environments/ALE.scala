@@ -436,6 +436,27 @@ class ALE extends edu.berkeley.bid.ALE {
   };
 
   def step(action:Int):(FMat, Float, Boolean) = step(action, null);
+  
+  def stepx(action:Int, out0:FMat):(FMat, Float, Boolean, Int) = {
+  	val nsteps = frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
+  	if (dims == null) {
+  		dims = getScreenDims
+  	}
+  	var reward = 0f;
+  	var i = 0;
+  	while (i < nsteps) {
+  		reward += act(action);
+  		if (pool && i == nsteps-2) buffer2 = getBufferData(buffer2);
+  		i += 1;
+  	} 
+  	buffer = getBufferData(buffer);
+  	val out = copyObs(out0);
+  	val done = game_over();
+  	val nlives = lives();
+  	(out, reward, done, nlives)
+  };
+
+  def stepx(action:Int):(FMat, Float, Boolean, Int) = stepx(action, null);
 
   def step2(action:Int):(Array[Byte], Float, Boolean) = {
   	val nsteps = frameskip._1 + rg.nextInt(frameskip._2 - frameskip._1 + 1);
@@ -509,6 +530,36 @@ object ALE {
 	};
 
 	def stepAll(envs:Array[ALE], actions:IMat):(Array[FMat], FMat, FMat) = stepAll(envs, actions, null, null, null);
+	
+  def stepAllx(envs:Array[ALE],  actions:IMat, obs0:Array[FMat], rewards0:FMat, dones0:FMat, lives0:FMat):(Array[FMat], FMat, FMat, FMat) = {
+		val npar = envs.length;
+		val obs = if (obs0.asInstanceOf[AnyRef] == null) new Array[FMat](npar) else obs0;
+		val rewards = if (rewards0.asInstanceOf[AnyRef] == null) zeros(1, npar) else rewards0;
+		val dones = if (dones0.asInstanceOf[AnyRef] == null) zeros(1, npar) else dones0;
+		val nlives = if (lives0.asInstanceOf[AnyRef] == null) zeros(1, npar) else lives0;
+		(0 until npar).par.foreach((i) => {
+			val nsteps = envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
+			var reward = 0f;
+			for (j <- 0 until nsteps) {
+			  reward += envs(i).act(actions(i));
+			  if (envs(i).pool & j == nsteps-2) envs(i).buffer2 = envs(i).getBufferData(envs(i).buffer2);
+			}
+			rewards(i) = reward;
+			envs(i).buffer = envs(i).getBufferData(envs(i).buffer);
+			obs(i) = envs(i).copyObs(obs(i));
+			dones(i) = if (envs(i).game_over()) 1f else 0f;
+			if (dones(i) == 1f) {
+			  envs(i).reset_game();
+			  if (envs(i).fire_to_start) {
+			    rewards(i) += envs(i).act(1);
+			  }
+			}
+			nlives(i) = envs(i).lives();
+		})
+		(obs, rewards, dones, nlives)
+	};
+
+	def stepAllx(envs:Array[ALE], actions:IMat):(Array[FMat], FMat, FMat, FMat) = stepAllx(envs, actions, null, null, null, null);
 
 	def stepAll2(envs:Array[ALE], actions:IMat, obs0:Array[Array[Byte]], rewards0:FMat, dones0:FMat):(Array[Array[Byte]], FMat, FMat) = {
 		val npar = envs.length;
