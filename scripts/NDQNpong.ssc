@@ -11,7 +11,6 @@ val opts = new ModelOpts;                      // Model options
 opts.entropy_weight = 1e-4f;                   // Entropy regularization weight
 opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for optimizer
-opts.baseline_decay = 0.9999f;                 // Baseline reward decay
 opts.gsq_decay = 0.99f;                        // Squared gradient memory decay factor for MSProp
 
 opts.nsteps = 500000;                          // Number of steps to run (game actions per environment)
