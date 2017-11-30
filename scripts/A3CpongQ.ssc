@@ -56,7 +56,7 @@ envopts.mode = ALE.ALEimageModeBinarize;
 envopts.background = 34;
 envopts.frameskip = irow(4,4);
 envopts.repeat_action_probability = 0f;
-envopts.score_range = row(-1f,1f);
+envopts.limit_reward_incr = row(-1f,1f);
 
 val envs = new Array[Environment](npar);
 for (i <- 0 until npar) {

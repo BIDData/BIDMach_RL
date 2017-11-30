@@ -65,7 +65,7 @@ val gamename = "Pong"
 //envopts.endEpochAtReward = true;          
 //envopts.mode = ALE.ALEimageModeBinarize;
 //envopts.background = 34;
-//envopts.score_range = row(-1f,1f);
+//envopts.limit_reward_incr = row(-1f,1f);
 
 val envs = new Array[Environment](npar);
 for (i <- 0 until npar) {
