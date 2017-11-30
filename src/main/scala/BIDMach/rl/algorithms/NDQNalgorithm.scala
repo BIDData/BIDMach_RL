@@ -187,7 +187,9 @@ class NDQNalgorithm(
   			
   			total_epochs += sum(dones).v.toInt;
   			block_reward += sum(rewards).v;
-
+  			min(rewards, envs(0).opts.limit_reward_incr(1), rewards)
+  			max(rewards, envs(0).opts.limit_reward_incr(0), rewards)
+  			
   			times(3) = toc;
 
   			if (envs(0).opts.endEpochAtReward) {

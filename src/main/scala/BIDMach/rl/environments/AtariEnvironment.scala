@@ -38,7 +38,7 @@ class AtariEnvironment(override val opts:AtariEnvironment.Options = new AtariEnv
   
   override val VALID_ACTIONS = new IMat(1, minactions.length, minactions);
   
-  override val score_range = opts.score_range;
+  override val limit_reward_incr = opts.limit_reward_incr;
   
   def step(action:Int):(FMat, Float, Boolean) = ale.step(action);
   
@@ -62,12 +62,10 @@ object AtariEnvironment {
   
   class Options extends Environment.Options {
 
-    var random_seed = 0;
     var repeat_action_probability = 0f;
     var frameskip = irow(4,4);
     var rom_dir = "/code/ALE/roms/"
     var rom_name = "Pong.bin";
-    var score_range = row(-1f,1f);
     var mode = ALE.ALEimageModeGrayscale;
     var shrink = true;
     var pool = true;
