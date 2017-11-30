@@ -160,8 +160,9 @@ class NDQNalgorithm(
   			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
   			times(1) = toc;
 
-  			val doeps = rand(1,npar) < epsilon;                                    // Do an epsilon-greedy action
-  			val probs = doeps *@ rand_actions + (1-doeps) *@ aprobs;               // Blend with epsilon-greedy
+  			val bestp = (maxi(preds) == preds);
+  			bestp ~ bestp / sum(bestp);
+  			val probs = epsilon *@ rand_actions + (1-epsilon) *@ bestp;            // Blend with epsilon-greedy
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
   			times(2) = toc;
@@ -201,8 +202,11 @@ class NDQNalgorithm(
   		}
   		t_estimator.predict(new_state);
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
-//  		val v_next = q_next dot q_prob;
-  		val v_next = maxi(q_next);
+  		val bestp = (maxi(q_next) == q_next);
+  		bestp ~ bestp / sum(bestp);
+  		val probs = (1-epsilon) *@ bestp + epsilon*rand_actions;               // Blend with epsilon-greedy
+  		val v_next = q_next dot probs;
+//  		val v_next = maxi(q_next);
   		times(5) = toc;
 
   		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next *@ opts.discount_factor; // Propagate rewards from Q-values at non-final states.
