@@ -38,7 +38,7 @@ class AtariEnvironment(override val opts:AtariEnvironment.Options = new AtariEnv
   
   override val VALID_ACTIONS = new IMat(1, minactions.length, minactions);
   
-  override val limit_reward_incr = opts.limit_reward_incr;
+  val limit_reward_incr = opts.limit_reward_incr;
   
   def step(action:Int):(FMat, Float, Boolean) = ale.step(action);
   
