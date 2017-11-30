@@ -33,8 +33,6 @@ class A3Calgorithm(
 	var block_count = 0;
 	var total_epochs = 0;
 	var total_time = 0f;
-	var rbaseline = 0f;
-	var rbaseline0 = 0f;
 	var igame = 0;
 	var state:FMat = null;
 	var obs0:FMat = null;
@@ -86,9 +84,6 @@ class A3Calgorithm(
 	  	}
 	  	print(".");
 	  }
-
-	  rbaseline = block_reward/block_count.toFloat;
-	  rbaseline0 = rbaseline;
 	  total_time = toc;     
 	  println("\n%d steps, %d epochs in %5.4f seconds at %5.4f msecs/step" format(
 	  		total_steps, total_epochs, total_time, 1000f*total_time/total_steps))
@@ -114,8 +109,6 @@ class A3Calgorithm(
   	
   	var last_epochs = 0;
   	val new_state = state.copy;
-  	var dobaseline = false;
-  	val baselinethresh  = 0.1f;
   	val GPUcacheState = Mat.useGPUcache;
   	val cacheState = Mat.useCache;
   	Mat.useGPUcache = true;
@@ -183,23 +176,13 @@ class A3Calgorithm(
   				dones <-- (dones + (rewards != 0f) > 0f);
   			}
 
-  			if (sum(dones).v > 0) rbaseline = opts.baseline_decay * rbaseline + (1-opts.baseline_decay) * (sum(rewards).v / sum(dones).v);
-  			if (! dobaseline && rbaseline - rbaseline0 > baselinethresh * (envs(0).limit_reward_incr(1) - envs(0).limit_reward_incr(0))) {
-  				dobaseline = true;
-  				rbaseline0 = rbaseline;
-  			}
-  			val arewards = if (dobaseline) {
-  				rewards - (dones > 0) *@ (rbaseline - rbaseline0);
-  			} else {
-  				rewards;
-  			}
   			if (i == 0) {
   			  state_memory(?,?,0->nwindow,?) = state;
   			} else {
   			  state_memory(?,?,nwindow+i-1,?) = state(?,?,nwindow-1,?);
   			}
   			action_memory(i,?) = actions;
-  			reward_memory(i+1,?) = arewards;
+  			reward_memory(i+1,?) = rewards;
   			done_memory(i+1,?) = dones;
   			state <-- new_state;
   			times(4) = toc;
@@ -265,7 +248,6 @@ object A3Calgorithm {
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var policygrad_weight = 0.3f;                    // Weight of policy gradient compared to regression loss
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
-  	var baseline_decay = 0.9999f;                    // Reward baseline decay
   	
   	var lr_schedule = (0f \ 3e-6f on 1f \ 3e-6f);    // Learning rate schedule
   	var temp_schedule = (0f \ 1f on 1f \ 1f);        // Temperature schedule
