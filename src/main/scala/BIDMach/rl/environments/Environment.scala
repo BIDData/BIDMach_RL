@@ -17,6 +17,8 @@ abstract class Environment(val opts:Environment.Opts = new Environment.Options) 
   
   val VALID_ACTIONS:IMat;
   
+  val limit_reward_incr:FMat;
+  
   def step(action:Int):(FMat, Float, Boolean);
   
   def statedims:IMat;

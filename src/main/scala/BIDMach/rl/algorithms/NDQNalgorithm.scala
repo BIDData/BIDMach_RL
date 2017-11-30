@@ -197,7 +197,7 @@ class NDQNalgorithm(
   			}
 
   			if (sum(dones).v > 0) rbaseline = opts.baseline_decay * rbaseline + (1-opts.baseline_decay) * (sum(rewards).v / sum(dones).v);
-  			if (! dobaseline && rbaseline - rbaseline0 > baselinethresh * (envs(0).score_range(1) - envs(0).score_range(0))) {
+  			if (! dobaseline && rbaseline - rbaseline0 > baselinethresh * (envs(0).limit_reward_incr(1) - envs(0).limit_reward_incr(0))) {
   				dobaseline = true;
   				rbaseline0 = rbaseline;
   			}
