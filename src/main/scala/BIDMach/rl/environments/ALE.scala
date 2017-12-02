@@ -558,6 +558,15 @@ object ALE {
 		})
 		(obs, rewards, dones, nlives)
 	};
+	
+	def getLives(envs:Array[ALE], nlives0:FMat):FMat = {
+		val npar = envs.length;
+		val nlives = if (nlives0.asInstanceOf[AnyRef] == null) zeros(1, npar) else nlives0;	  
+		for (i <- 0 until npar) {
+		  nlives(i) = envs(i).lives()
+		}
+		nlives;
+	}
 
 	def stepAllx(envs:Array[ALE], actions:IMat):(Array[FMat], FMat, FMat, FMat) = stepAllx(envs, actions, null, null, null, null);
 

@@ -33,6 +33,7 @@ object Environment {
   
   trait Opts extends BIDMat.Opts {
   	var endEpochAtReward = false;
+  	var endEpochAtDeath = false;
   	var random_seed = 0;
   	var limit_reward_incr = row(-1f,1f);
   }

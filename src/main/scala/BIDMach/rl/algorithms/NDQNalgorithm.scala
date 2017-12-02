@@ -99,6 +99,8 @@ class NDQNalgorithm(
     val temperatures = loginterp(opts.temp_schedule, nsteps+1);
     val epsilons = loginterp(opts.eps_schedule, nsteps+1);
     val ndqn = opts.ndqn;
+    val old_lives = zeros(1, npar);
+    val new_lives  = zeros(1, npar);
     
     total_steps = 0;
     block_reward = 0f;
@@ -141,6 +143,8 @@ class NDQNalgorithm(
 
   	tic;
   	istep = ndqn;
+  	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
+  	
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
@@ -165,6 +169,7 @@ class NDQNalgorithm(
   			val probs = epsilon *@ rand_actions + (1-epsilon) *@ bestp;            // Blend with epsilon-greedy
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
+  			for (i <- 0 until npar) new_lives(i) = envs(i).lives();
   			times(2) = toc;
 
   			for (j <- 0 until npar) {                                              // process the observation
@@ -189,6 +194,11 @@ class NDQNalgorithm(
   			if (envs(0).opts.endEpochAtReward) {
   				dones <-- (dones + (rewards != 0f) > 0f);
   			}
+  			
+  			if (envs(0).opts.endEpochAtDeath) {
+  				dones <-- (dones + (new_lives != old_lives) > 0f);
+  			}
+  			old_lives <-- new_lives;
 
   			state_memory(?,?,?,(i*npar)->((i+1)*npar)) = state;
   			action_memory(i,?) = actions;
