@@ -196,7 +196,7 @@ class NDQNalgorithm(
   			}
   			
   			if (envs(0).opts.endEpochAtDeath) {
-  				dones <-- (dones + (new_lives != old_lives) > 0f);
+  				dones <-- (dones + (new_lives < old_lives) > 0f);
   			}
   			old_lives <-- new_lives;
 
