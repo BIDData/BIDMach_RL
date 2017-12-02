@@ -25,21 +25,15 @@ opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                         // gradient clipping
 
 opts.lr_schedule = (0f \ 3e-6f on
-	  	    0.8f \ 3e-6f on
-		    0.9f \ 3e-7f on
-		    0.9f \ 1e-10f on
-		    1f \ 1e-10f); 
+		    1f \ 3e-6f); 
 
 opts.eps_schedule = (0f \ 0.3f on 
-		     0.8f \ 0.01f on 
 		     0.9f \ 0.001f on
 		     0.9f \ 0.0001f on
                      1f \ 0.0001f);
 
 opts.temp_schedule = (0f \ 0.001f on 
-		      0.9f \ 0.001f on
-		      0.9f \ 0.0001f on
-                      1f \ 0.0001f);
+                      1f \ 0.001f);
 
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
@@ -51,18 +45,13 @@ val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
 envopts.xoff = 0;
 envopts.yoff = 35;
-envopts.pool = false;
+envopts.pool = true;
 envopts.shrink = true;
 envopts.frameskip = irow(4,4);
 envopts.repeat_action_probability = 0f;
 
 val gamename = "Pong"
 :load gamedefs.ssc
-//envopts.rom_name="Pong.bin";       
-//envopts.endEpochAtReward = true;          
-//envopts.mode = ALE.ALEimageModeBinarize;
-//envopts.background = 34;
-//envopts.limit_reward_incr = row(-1f,1f);
 
 val envs = new Array[Environment](npar);
 for (i <- 0 until npar) {
