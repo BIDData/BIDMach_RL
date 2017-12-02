@@ -24,8 +24,8 @@ opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                         // gradient clipping
 
-opts.lr_schedule = (0f \ 1e-6f on
-		    1f \ 1e-6f); 
+opts.lr_schedule = (0f \ 3e-6f on
+		    1f \ 3e-6f); 
 
 opts.eps_schedule = (0f \ 0.3f on
 		     0.9f \ 0.001f on
@@ -45,8 +45,6 @@ val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
 envopts.rom_name="Breakout.bin";       
 envopts.endEpochAtReward = false;       
-envopts.height = 80;
-envopts.width = 80;
 envopts.xoff = 0;
 envopts.yoff = 35;
 envopts.pool = true;
