@@ -73,7 +73,7 @@ object AtariEnvironment {
     var background = 34;
     var xoff = 0;
     var yoff = 17;
-    var width = 81;
-    var height = 81;    
+    var width = 80;
+    var height = 80;    
   }
 }

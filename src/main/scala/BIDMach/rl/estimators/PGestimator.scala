@@ -59,7 +59,7 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
   	val eps =     const(1e-2f);
 
   	// Convolution layers
-  	val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=3,hasBias=opts.hasBias);
+  	val conv1 =   conv(in)(w=7,h=7,nch=opts.nhidden,stride=4,pad=4,hasBias=opts.hasBias);
   	val relu1 =   relu(conv1)(inplace=opts.inplace);
   	val conv2 =   conv(relu1)(w=3,h=3,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias);
   	val relu2 =   relu(conv2)(inplace=opts.inplace);
