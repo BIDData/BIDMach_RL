@@ -56,6 +56,7 @@ class NDQNalgorithm(
 	  nactions = VALID_ACTIONS.length;
 	  val nwindow = opts.nwindow;
 	  state = zeros(envs(0).statedims\nwindow\npar);
+	  zstate = zeros(envs(0).statedims\nwindow\npar);
 	  mean_state = zeros(envs(0).statedims\1\1);
 	  
 	  save_length = opts.save_length;
