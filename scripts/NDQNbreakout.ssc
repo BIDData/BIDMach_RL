@@ -13,7 +13,7 @@ opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for optimizer
 opts.gsq_decay = 0.99f;                        // Squared gradient memory decay factor for MSProp
 
-opts.nsteps = 2000000;                          // Number of steps to run (game actions per environment)
+opts.nsteps = 5000000;                          // Number of steps to run (game actions per environment)
 opts.ndqn = 5;                                 // Number of DQN steps per update
 opts.target_window = 50;                       // Interval to update target estimator from q-estimator
 opts.print_steps = 10000;                      // Number of steps between printouts
@@ -24,12 +24,12 @@ opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                         // gradient clipping
 
-opts.lr_schedule = (0f \ 2e-6f on
-		    1f \ 2e-6f); 
+opts.lr_schedule = (0f \ 3e-5f on
+		    1f \ 3e-5f); 
 
 opts.eps_schedule = (0f \ 0.3f on
-		     0.9f \ 0.001f on
-                     1f \ 0.001f);
+		     0.9f \ 0.0001f on
+                     1f \ 0.0001f);
 
 opts.temp_schedule = (0f \ 0.001f on 
                       1f \ 0.001f);
@@ -46,8 +46,8 @@ envopts.rom_dir=rom_dir;
 envopts.rom_name="Breakout.bin";       
 envopts.endEpochAtReward = false;
 envopts.endEpochAtDeath = true;
-envopts.xoff = 0;
-envopts.yoff = 40;
+envopts.xoff = -2;
+envopts.yoff = 30;
 envopts.pool = false;
 envopts.shrink = true;
 envopts.mode = ALE.ALEimageModeGrayscale;

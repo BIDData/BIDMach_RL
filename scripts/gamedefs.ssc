@@ -2,24 +2,35 @@
 gamename match {
 case "Breakout" => {
     envopts.rom_name="Breakout.bin";       
-    envopts.endEpochAtReward = false;          
-    envopts.mode = ALE.ALEimageModeBinarize;
-    envopts.background = 0;
     envopts.limit_reward_incr = row(0f,1f);
+    opts.nactions = 4;
+    envopts.endEpochAtReward = false;
+    envopts.endEpochAtDeath = true;          
+    envopts.fire_to_start = true;
+    envopts.pool = false;
+    envopts.shrink = true;
+    envopts.mode = ALE.ALEimageModeGrayscale;
+    envopts.xoff = -2;
+    envopts.yoff = 30;	
     envopts.frameskip = irow(4,4);
     envopts.repeat_action_probability = 0f;
-    envopts.fire_to_start = true;
-    opts.nactions = 4;
 }
 case "Pong" => {
     envopts.rom_name="Pong.bin";       
-    envopts.endEpochAtReward = true;          
-    envopts.mode = ALE.ALEimageModeGrayscale;
-    envopts.pool = false;
-    envopts.background = 34;
     envopts.limit_reward_incr = row(-1f,1f);
+    opts.nactions = 3;
+    envopts.endEpochAtReward = true;
+    envopts.endEpochAtDeath = false;
+    envopts.fire_to_start = false;
+    envopts.pool = false;
+    envopts.shrink = true;
+    envopts.mode = ALE.ALEimageModeGrayscale;
+    envopts.xoff = -2;
+    envopts.yoff = 30;
     envopts.frameskip = irow(4,4);
     envopts.repeat_action_probability = 0f;
-    opts.nactions = 3;
 }
+case _ => {
+    println("Game name %s not recognized" format gamename);
+}    
 }
