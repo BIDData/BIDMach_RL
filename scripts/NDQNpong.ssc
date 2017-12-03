@@ -29,7 +29,6 @@ opts.lr_schedule = (0f \ 3e-6f on
 
 opts.eps_schedule = (0f \ 0.3f on 
 		     0.9f \ 0.001f on
-		     0.9f \ 0.0001f on
                      1f \ 0.0001f);
 
 opts.temp_schedule = (0f \ 0.001f on 
