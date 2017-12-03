@@ -24,8 +24,8 @@ opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                         // gradient clipping
 
-opts.lr_schedule = (0f \ 3e-6f on
-		    1f \ 3e-6f); 
+opts.lr_schedule = (0f \ 2e-6f on
+		    1f \ 2e-6f); 
 
 opts.eps_schedule = (0f \ 0.3f on
 		     0.9f \ 0.001f on
@@ -44,17 +44,18 @@ opts.logfile = "logNDQNbreakout.txt"
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
 envopts.rom_name="Breakout.bin";       
-envopts.endEpochAtReward = false;       
+envopts.endEpochAtReward = false;
+envopts.endEpochAtDeath = true;
 envopts.xoff = 0;
-envopts.yoff = 35;
-envopts.pool = true;
+envopts.yoff = 40;
+envopts.pool = false;
 envopts.shrink = true;
-envopts.mode = ALE.ALEimageModeBinarize;
+envopts.mode = ALE.ALEimageModeGrayscale;
 envopts.background = 0;
 envopts.frameskip = irow(4,4);
 envopts.repeat_action_probability = 0f;
 envopts.limit_reward_incr = row(0f,1f);
-envopts.fire_to_start = false;
+envopts.fire_to_start = true;
 
 val envs = new Array[Environment](npar);
 for (i <- 0 until npar) {
