@@ -53,7 +53,7 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
     done = true;
   }
   
-  def animate(rate:Float = 30f, iscale:Int=255) = {
+  def animate(rate:Float = 30f, iscale:Float=255) = {
     val h = saved_frames.dims(0);
     val w = saved_frames.dims(1);
     val img = Image(saved_frames(?,?,0).reshapeView(h, w)*iscale);
