@@ -35,6 +35,7 @@ class NDQNalgorithm(
 	var total_time = 0f;
 	var igame = 0;
 	var state:FMat = null;
+	var zstate:FMat = null;
 	var mean_state:FMat = null;
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
@@ -164,7 +165,7 @@ class NDQNalgorithm(
   		var i = 0;
   		while (i < ndqn && !done) {
   			times(0) = toc;
-  			val zstate = state - mean_state;
+  			zstate ~ state - mean_state;
   			q_estimator.predict(zstate);                                            // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
   			times(1) = toc;
@@ -215,7 +216,7 @@ class NDQNalgorithm(
   			while (paused || (pauseAt > 0 && istep + i >= pauseAt)) Thread.sleep(1000);
   			i += 1;
   		}
-  		val zstate = new_state - mean_state;
+  		zstate ~ new_state - mean_state;
   		t_estimator.predict(zstate);
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
   		val bestp = (maxi(q_next) == q_next);
@@ -234,7 +235,7 @@ class NDQNalgorithm(
   		// Now compute gradients for the states/actions/rewards saved in the table.
   		for (i <- 0 until ndqn) {
   			new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar));
-  			val zstate = new_state - mean_state;
+  			zstate ~ new_state - mean_state;
   			q_estimator.gradient(zstate, action_memory(i,?), reward_memory(i,?), npar);
   			val (_, _, ev, lv) = q_estimator.getOutputs4;
   			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss
