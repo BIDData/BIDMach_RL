@@ -538,6 +538,7 @@ object ALE {
 		val dones = if (dones0.asInstanceOf[AnyRef] == null) zeros(1, npar) else dones0;
 		val nlives = if (lives0.asInstanceOf[AnyRef] == null) zeros(1, npar) else lives0;
 		(0 until npar).par.foreach((i) => {
+			val old_lives = envs(i).lives();
 			val nsteps = envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
 			var reward = 0f;
 			for (j <- 0 until nsteps) {
@@ -550,11 +551,12 @@ object ALE {
 			dones(i) = if (envs(i).game_over()) 1f else 0f;
 			if (dones(i) == 1f) {
 			  envs(i).reset_game();
-			  if (envs(i).fire_to_start) {
-			    rewards(i) += envs(i).act(1);
-			  }
 			}
-			nlives(i) = envs(i).lives();
+			val new_lives = envs(i).lives();
+			if (envs(i).fire_to_start && (dones(i) == 1f || new_lives < old_lives)) {
+				rewards(i) += envs(i).act(1);
+			}
+			nlives(i) = new_lives;
 		})
 		(obs, rewards, dones, nlives)
 	};
@@ -576,15 +578,17 @@ object ALE {
 		val rewards = if (rewards0.asInstanceOf[AnyRef] == null) zeros(1, npar) else rewards0;
 		val dones = if (dones0.asInstanceOf[AnyRef] == null) zeros(1, npar) else dones0;
 		(0 until npar).par.foreach((i) => {
+		  val old_lives = envs(i).lives();
 			val nsteps = envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
 			rewards(i) = (0 until nsteps).map((j) => envs(i).act(actions(i))).sum;
 			obs(i) = envs(i).getBufferData(envs(i).buffer);
 			dones(i) = if (envs(i).game_over()) 1f else 0f;
 			if (dones(i) == 1f) {
 				envs(i).reset_game();
-				if (envs(i).fire_to_start) {
-					rewards(i) += envs(i).act(1);
-				}
+			}
+			val new_lives = envs(i).lives();
+			if (envs(i).fire_to_start && (dones(i) == 1f || new_lives < old_lives)) {
+				rewards(i) += envs(i).act(1);
 			}
 		})
 		(obs, rewards, dones)
