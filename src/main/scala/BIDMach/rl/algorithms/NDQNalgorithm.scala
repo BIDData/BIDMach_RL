@@ -75,7 +75,7 @@ class NDQNalgorithm(
 	  		val (obs, reward, done) = envs(i).step(action);
 	  		obs0 = obs;
 	  		total_steps += 1;
-	  		mean_state = mean_state + obs.reshapeView(obs.dims(0), obs.dims(1), 1, 1)
+	  		mean_state = mean_state + obs.reshapeView(obs.dims(0), obs.dims(1), 1, 1);
 	  		if (nmoves - j <= nwindow) {
 	  			val k = nwindow - nmoves + j;
 	  			state(?,?,k,i) = obs;

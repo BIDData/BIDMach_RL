@@ -35,6 +35,8 @@ class NPGalgorithm(
 	var total_time = 0f;
 	var igame = 0;
 	var state:FMat = null;
+	var mean_state:FMat = null;
+	var zstate:FMat = null;
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
@@ -54,6 +56,8 @@ class NPGalgorithm(
 	  nactions = VALID_ACTIONS.length;
 	  val nwindow = opts.nwindow;
 	  state = zeros(envs(0).statedims\nwindow\npar);
+	  zstate = zeros(envs(0).statedims\nwindow\npar);
+	  mean_state = zeros(envs(0).statedims\1\1);
 	  
 	  save_length = opts.save_length;
 	  saved_frames = zeros(envs(0).statedims\save_length);
@@ -70,6 +74,7 @@ class NPGalgorithm(
 	  		val (obs, reward, done) = envs(i).step(action);
 	  		obs0 = obs;
 	  		total_steps += 1;
+	  		mean_state = mean_state + obs.reshapeView(obs.dims(0), obs.dims(1), 1, 1);
 	  		if (nmoves - j <= nwindow) {
 	  			val k = nwindow - nmoves + j;
 	  			state(?,?,k,i) = obs;
@@ -85,7 +90,7 @@ class NPGalgorithm(
 	  	}
 	  	print(".");
 	  }
-
+	  mean_state ~ mean_state / total_steps;
 	  total_time = toc;     
 	  println("\n%d steps, %d epochs in %5.4f seconds at %5.4f msecs/step" format(
 	  		total_steps, total_epochs, total_time, 1000f*total_time/total_steps))
@@ -157,7 +162,8 @@ class NPGalgorithm(
   		var i = 0;
   		while (i < ndqn && !done) {
   			times(0) = toc;
-  			q_estimator.predict(state);                                            // get the next action probabilities etc from the policy
+  			zstate ~ state - mean_state;
+  			q_estimator.predict(zstate);                                            // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
   			times(1) = toc;
 
@@ -197,7 +203,8 @@ class NPGalgorithm(
   			while (paused || (pauseAt > 0 && istep + i >= pauseAt)) Thread.sleep(1000);
   			i += 1;
   		}
-  		t_estimator.predict(new_state);
+  		zstate ~ new_state - mean_state;
+  		t_estimator.predict(zstate);
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
   		val v_next = q_next dot q_prob;
   		times(5) = toc;
@@ -211,7 +218,8 @@ class NPGalgorithm(
   		// Now compute gradients for the states/actions/rewards saved in the table.
   		for (i <- 0 until ndqn) {
   			new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar));
-  			q_estimator.gradient(new_state, action_memory(i,?), reward_memory(i,?), npar);
+  			zstate ~ new_state - mean_state;
+  			q_estimator.gradient(zstate, action_memory(i,?), reward_memory(i,?), npar);
   			val (_, _, ev, lv) = q_estimator.getOutputs4;
   			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss
   			block_entropy += sum(ev).v; 

@@ -35,6 +35,8 @@ class A3Calgorithm(
 	var total_time = 0f;
 	var igame = 0;
 	var state:FMat = null;
+	var mean_state:FMat = null;
+	var zstate:FMat = null;
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
@@ -53,6 +55,8 @@ class A3Calgorithm(
 	  nactions = VALID_ACTIONS.length;
 	  val nwindow = opts.nwindow;
 	  state = zeros(envs(0).statedims\nwindow\npar);
+	  zstate = zeros(envs(0).statedims\nwindow\npar);
+	  mean_state = zeros(envs(0).statedims\1\1);
 	  
 	  save_length = opts.save_length;
 	  saved_frames = zeros(envs(0).statedims\save_length);
@@ -69,6 +73,7 @@ class A3Calgorithm(
 	  		val (obs, reward, done) = envs(i).step(action);
 	  		obs0 = obs;
 	  		total_steps += 1;
+	  		mean_state = mean_state + obs.reshapeView(obs.dims(0), obs.dims(1), 1, 1);
 	  		if (nmoves - j <= nwindow) {
 	  			val k = nwindow - nmoves + j;
 	  			state(?,?,k,i) = obs;
@@ -84,6 +89,7 @@ class A3Calgorithm(
 	  	}
 	  	print(".");
 	  }
+	  mean_state ~ mean_state / total_steps;
 	  total_time = toc;     
 	  println("\n%d steps, %d epochs in %5.4f seconds at %5.4f msecs/step" format(
 	  		total_steps, total_epochs, total_time, 1000f*total_time/total_steps))
@@ -148,7 +154,8 @@ class A3Calgorithm(
   		var i = 0;
   		while (i < ndqn && !done) {
   			times(0) = toc;
-  			estimator.predict4(state); // get the next action probabilities etc from the policy
+  			zstate ~ state - mean_state;
+  			estimator.predict4(zstate); // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = estimator.getOutputs4;
   			times(1) = toc;
 
@@ -190,7 +197,8 @@ class A3Calgorithm(
   			while (paused || (pauseAt > 0 && istep + i >= pauseAt)) Thread.sleep(1000);
   			i += 1;
   		}
-  		estimator.predict4(new_state);
+  		zstate ~ new_state - mean_state;
+  		estimator.predict4(zstate);
   		val (v_next, _, _, _) = estimator.getOutputs4; 
   		times(5) = toc;
 
@@ -203,7 +211,8 @@ class A3Calgorithm(
   		// Now compute gradients for the states/actions/rewards saved in the table.
   		for (i <- 0 until ndqn) {
   			new_state <-- state_memory(?,?,i->(i+nwindow),?);
-  			estimator.gradient4(new_state, action_memory(i,?), reward_memory(i,?), reward_memory(i+1,?));
+  			zstate ~ new_state - mean_state;
+  			estimator.gradient4(zstate, action_memory(i,?), reward_memory(i,?), reward_memory(i+1,?));
   			val (_, _, ev, lv) = estimator.getOutputs4;
   			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss
   			block_entropy += sum(ev).v; 
