@@ -73,7 +73,7 @@ class NDQNalgorithm(
 	  		val (obs, reward, done) = envs(i).step(action);
 	  		obs0 = obs;
 	  		total_steps += 1;
-	  		mean_state = opts.mean_factor *@ mean_state + (1-opts.mean_factor) *@ obs.reshapeView(obs.dims(0), obs.dims(1), 1, 1)
+	  		mean_state = mean_state + obs.reshapeView(obs.dims(0), obs.dims(1), 1, 1)
 	  		if (nmoves - j <= nwindow) {
 	  			val k = nwindow - nmoves + j;
 	  			state(?,?,k,i) = obs;
@@ -89,6 +89,7 @@ class NDQNalgorithm(
 	  	}
 	  	print(".");
 	  }
+	  mean_state ~ mean_state / total_steps;
 	  total_time = toc;     
 	  println("\n%d steps, %d epochs in %5.4f seconds at %5.4f msecs/step" format(
 	  		total_steps, total_epochs, total_time, 1000f*total_time/total_steps))
@@ -276,7 +277,6 @@ object NDQNalgorithm {
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
-  	var mean_factor = 0.999f;
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
