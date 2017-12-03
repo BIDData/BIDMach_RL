@@ -20,6 +20,7 @@ class ALE extends edu.berkeley.bid.ALE {
   var yoff = 17;
   var width = 80;
   var height = 80;
+  var realwidth = 160;
 
   def getBufferData(buffer:Array[Byte]):Array[Byte] = {
     val buffer0 = mode match {
@@ -102,7 +103,8 @@ class ALE extends edu.berkeley.bid.ALE {
 				  		val irow2 = (i >> 1) * width;
 				  		var j = 0;
 				  		while (j < width*2) {
-				  			val ii = irow + (j + xoff)*3;
+				  		  val j0 = math.min(j, realwidth - xoff);
+				  			val ii = irow + (j0 + xoff)*3;
 				  			val jj = irow2 + (j >> 1);
 				  			val r = math.max(buffer(ii) & 0xff, buffer2(ii) & 0xff);
 				  			val g = math.max(buffer(ii+1) & 0xff, buffer2(ii+1) & 0xff);
@@ -121,7 +123,8 @@ class ALE extends edu.berkeley.bid.ALE {
 				  		val irow2 = (i >> 1) * width;
 				  		var j = 0;
 				  		while (j < width*2) {
-				  			val ii = irow + (j + xoff)*3;
+				  			val j0 = math.min(j, realwidth - xoff);
+				  			val ii = irow + (j0 + xoff)*3;
 				  			val jj = irow2 + (j >> 1);
 				  			val r = math.max(buffer(ii) & 0xff, buffer2(ii) & 0xff);
 				  			val g = math.max(buffer(ii+1) & 0xff, buffer2(ii+1) & 0xff);
@@ -141,7 +144,8 @@ class ALE extends edu.berkeley.bid.ALE {
 				  		val irow2 = (i >> 1) * width;
 				  		var j = 0;
 				  		while (j < width*2) {
-				  			val ii = irow + j + xoff;
+				  			val j0 = math.min(j, realwidth - xoff);
+				  			val ii = irow + j0 + xoff;
 				  			val jj = irow2 + (j >> 1);
 				  			val r = if ((buffer(ii) & 0xff) != background || (buffer2(ii) & 0xff) != background) cc else 0f;
 				  			odata(jj) += r;
@@ -158,7 +162,8 @@ class ALE extends edu.berkeley.bid.ALE {
 				  		val irow2 = (i >> 1) * width;
 				  		var j = 0;
 				  		while (j < width*2) {
-				  			val ii = irow + j + xoff;
+				  			val j0 = math.min(j, realwidth - xoff);
+				  			val ii = irow + j0 + xoff;
 				  			val jj = irow2 + (j >> 1);
 				  			val r = math.max(colormap(buffer(ii) & 0xff), colormap(buffer2(ii) & 0xff));
 				  			odata(jj) += r*cc;
@@ -178,7 +183,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
-		      			val ii = irow + (j + xoff)*3;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + (j0 + xoff)*3;
 		      			val jj = irow2 + j ;
 		      			val r = math.max(buffer(ii) & 0xff, buffer2(ii) & 0xff);
 		      			val g = math.max(buffer(ii+1) & 0xff, buffer2(ii+1) & 0xff);
@@ -197,7 +203,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
-		      			val ii = irow + (j + xoff)*3;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + (j0 + xoff)*3;
 		      			val jj = irow2 + j;
 		      			val r = math.max(buffer(ii) & 0xff, buffer2(ii) & 0xff);
 		      			val g = math.max(buffer(ii+1) & 0xff, buffer2(ii+1) & 0xff);
@@ -216,7 +223,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
-		      			val ii = irow + j + xoff;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + j0 + xoff;
 		      			val jj = irow2 + j;
 		      			odata(jj) = if ((buffer(ii) & 0xff) != background || (buffer2(ii) & 0xff) != background) 1f else 0f;
 		      			j += 1;					
@@ -231,7 +239,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
-		      			val ii = irow + j + xoff;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + j0 + xoff;
 		      			val jj = irow2 + j;
 		      			odata(jj) = math.max(colormap(buffer(ii) & 0xff), colormap(buffer2(ii) & 0xff));
 		      			j += 1;					
@@ -250,7 +259,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = (i >> 1) * width;
 		      		var j = 0;
 		      		while (j < width*2) {
-		      			val ii = irow + j + xoff;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + j0 + xoff;
 		      			val jj = irow2 + (j  >> 1);
 		      			odata(jj) = (buffer(ii) & 0xff);
 		      			j += 1;					
@@ -266,7 +276,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = (i >> 1) * width;
 		      		var j = 0;
 		      		while (j < width*2) {
-		      			val ii = irow + j + xoff;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + j0 + xoff;
 		      			val jj = irow2 + (j >> 1);
 		      			odata(jj) += (buffer(ii) & 0xff) * cc;
 		      			j += 1;					
@@ -283,7 +294,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = (i >> 1) * width;
 		      		var j = 0;
 		      		while (j < width*2) {
-		      			val ii = irow + (j + xoff)*3;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + (j0 + xoff)*3;
 		      			val jj = irow2 + (j >> 1);
 		      			odata(jj) += (buffer(ii) & 0xff) * cc;
 		      			odata(jj + len) += (buffer(ii+1) & 0xff) * cc;
@@ -301,7 +313,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = (i >> 1) * width;
 		      		var j = 0;
 		      		while (j < width*2) {
-		      			val ii = irow + j + xoff;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + j0 + xoff;
 		      			val jj = irow2 + (j >> 1);
 		      			val r = if ((buffer(ii) & 0xff) != background) cc else 0f;
 		      			odata(jj) += r;
@@ -319,7 +332,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = (i >> 1) * width;
 		      		var j = 0;
 		      		while (j < width*2) {
-		      			val ii = irow + j + xoff;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + j0 + xoff;
 		      			val jj = irow2 + (j >> 1);
 		      			val r = colormap(buffer(ii) & 0xff) * cc;
 		      			odata(jj) += r;
@@ -337,7 +351,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
-		      			val ii = irow + j + xoff;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + j0 + xoff;
 		      			val jj = irow2 + j;
 		      			odata(jj) = buffer(ii) & 0xff;
 		      			j += 1;					
@@ -352,7 +367,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
-		      			val ii = irow + j + xoff;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + j0 + xoff;
 		      			val jj = irow2 + j;
 		      			odata(jj) = (buffer(ii) & 0xff) * cc;
 		      			j += 1;					
@@ -368,7 +384,8 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
-		      			val ii = irow + (j + xoff)*3;
+		      			val j0 = math.min(j, realwidth - xoff);
+		      			val ii = irow + (j0 + xoff)*3;
 		      			val jj = irow2 + j;
 		      			odata(jj) = (buffer(ii) & 0xff) * cc;
 		      			odata(jj+len) = (buffer(ii+1) & 0xff) * cc;
@@ -384,6 +401,7 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
+		      			val j0 = math.min(j, realwidth - xoff);
 		      			val ii = irow + j + xoff;
 		      			val jj = irow2 + j;
 		      			odata(jj) = if ((buffer(ii) & 0xff) != background) 1f else 0f;
@@ -399,6 +417,7 @@ class ALE extends edu.berkeley.bid.ALE {
 		      		val irow2 = i * width;
 		      		var j = 0;
 		      		while (j < width) {
+		      			val j0 = math.min(j, realwidth - xoff);
 		      			val ii = irow + j + xoff;
 		      			val jj = irow2 + j;
 		      			odata(jj) = colormap(buffer(ii) & 0xff);
