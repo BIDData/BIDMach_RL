@@ -76,7 +76,7 @@ class NDQNalgorithm(
 	  		if (nmoves - j <= nwindow) {
 	  			val k = nwindow - nmoves + j;
 	  			state(?,?,k,i) = obs;
-	  			mean_state = opts.mean_factor * mean_state + (1-opts.mean_factor/npar/nwindow) * state.sum(irow(2,3));
+	  			mean_state = opts.mean_factor * mean_state + ((1-opts.mean_factor)/npar/nwindow) * state.sum(irow(2,3));
 	  		}
 	  		if (done || reward != 0) {
 	  			block_reward += reward;
