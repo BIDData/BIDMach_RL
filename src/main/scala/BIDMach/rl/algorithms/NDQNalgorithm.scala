@@ -35,6 +35,7 @@ class NDQNalgorithm(
 	var total_time = 0f;
 	var igame = 0;
 	var state:FMat = null;
+	var mean_state:FMat = null;
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	
@@ -54,6 +55,7 @@ class NDQNalgorithm(
 	  nactions = VALID_ACTIONS.length;
 	  val nwindow = opts.nwindow;
 	  state = zeros(envs(0).statedims\nwindow\npar);
+	  mean_state = zeros(envs(0).statedims\1\1);
 	  
 	  save_length = opts.save_length;
 	  saved_frames = zeros(envs(0).statedims\save_length);
@@ -74,6 +76,7 @@ class NDQNalgorithm(
 	  		if (nmoves - j <= nwindow) {
 	  			val k = nwindow - nmoves + j;
 	  			state(?,?,k,i) = obs;
+	  			mean_state = opts.mean_factor * mean_state + (1-opts.mean_factor/npar/nwindow) * state.sum(irow(2,3));
 	  		}
 	  		if (done || reward != 0) {
 	  			block_reward += reward;
@@ -160,7 +163,8 @@ class NDQNalgorithm(
   		var i = 0;
   		while (i < ndqn && !done) {
   			times(0) = toc;
-  			q_estimator.predict(state);                                            // get the next action probabilities etc from the policy
+  			val zstate = state - mean_state;
+  			q_estimator.predict(zstate);                                            // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
   			times(1) = toc;
 
@@ -210,7 +214,8 @@ class NDQNalgorithm(
   			while (paused || (pauseAt > 0 && istep + i >= pauseAt)) Thread.sleep(1000);
   			i += 1;
   		}
-  		t_estimator.predict(new_state);
+  		val zstate = new_state - mean_state;
+  		t_estimator.predict(zstate);
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
   		val bestp = (maxi(q_next) == q_next);
   		bestp ~ bestp / sum(bestp);
@@ -228,7 +233,8 @@ class NDQNalgorithm(
   		// Now compute gradients for the states/actions/rewards saved in the table.
   		for (i <- 0 until ndqn) {
   			new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar));
-  			q_estimator.gradient(new_state, action_memory(i,?), reward_memory(i,?), npar);
+  			val zstate = new_state - mean_state;
+  			q_estimator.gradient(zstate, action_memory(i,?), reward_memory(i,?), npar);
   			val (_, _, ev, lv) = q_estimator.getOutputs4;
   			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss
   			block_entropy += sum(ev).v; 
@@ -270,6 +276,7 @@ object NDQNalgorithm {
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
+  	var mean_factor = 0.999f;
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
