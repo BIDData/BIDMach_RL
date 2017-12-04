@@ -99,9 +99,11 @@ class A3Calgorithm(
   def train {
     val nsteps = opts.nsteps;
     val nwindow = opts.nwindow;
-    val learning_rates = loginterp(opts.lr_schedule, nsteps+1);
-    val temperatures = loginterp(opts.temp_schedule, nsteps+1);
+    val learning_rates = opts.lr_schedule(nsteps+1);
+    val temperatures = opts.temp_schedule(nsteps+1);
     val ndqn = opts.ndqn;
+    val old_lives = zeros(1, npar);
+    val new_lives  = zeros(1, npar);
     
     total_steps = 0;
     block_reward = 0f;
@@ -142,6 +144,7 @@ class A3Calgorithm(
 
   	tic;
   	var istep = ndqn;
+  	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
@@ -161,6 +164,7 @@ class A3Calgorithm(
 
   			actions <-- multirnd(aprobs);                                              // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
+  			for (i <- 0 until npar) new_lives(i) = envs(i).lives();
   			times(2) = toc;
 
   			for (j <- 0 until npar) {                                                                                                    // process the observation
@@ -182,6 +186,11 @@ class A3Calgorithm(
   			if (envs(0).opts.endEpochAtReward) {
   				dones <-- (dones + (rewards != 0f) > 0f);
   			}
+  			
+  			if (envs(0).opts.endEpochAtDeath) {
+  				dones <-- (dones + (new_lives < old_lives) > 0f);
+  			}
+  			old_lives <-- new_lives;
 
   			if (i == 0) {
   			  state_memory(?,?,0->nwindow,?) = state;
@@ -202,10 +211,10 @@ class A3Calgorithm(
   		val (v_next, _, _, _) = estimator.getOutputs4; 
   		times(5) = toc;
 
-  		reward_memory(ndqn,?) = reward_memory(ndqn,?) + (1f-done_memory(ndqn,?)) *@ v_next; // Add to reward mem if no actual reward
+  		reward_memory(ndqn,?) = reward_memory(ndqn,?) + (1f-done_memory(ndqn,?)) *@ opts.discount_factor *@ v_next; // Add to reward mem if no actual reward
   		for (i <- (ndqn-1) to 0 by -1) {
   			// Propagate rewards back in time. Actual rewards override predicted rewards. 
-  			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
+  			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ opts.discount_factor *@ reward_memory(i+1,?) ;
   		}
 
   		// Now compute gradients for the states/actions/rewards saved in the table.
@@ -258,8 +267,8 @@ object A3Calgorithm {
   	var policygrad_weight = 0.3f;                    // Weight of policy gradient compared to regression loss
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
   	
-  	var lr_schedule = (0f \ 3e-6f on 1f \ 3e-6f);    // Learning rate schedule
-  	var temp_schedule = (0f \ 1f on 1f \ 1f);        // Temperature schedule
+  	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
+  	var temp_schedule = linterp(0f \ 1f on 1f \ 1f, _:Int);        // Temperature schedule
   }
   
   class Options extends Opts {}

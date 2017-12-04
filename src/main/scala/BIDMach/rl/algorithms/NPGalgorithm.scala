@@ -100,10 +100,12 @@ class NPGalgorithm(
   def train {
     val nsteps = opts.nsteps;
     val nwindow = opts.nwindow;
-    val learning_rates = loginterp(opts.lr_schedule, nsteps+1);
-    val temperatures = loginterp(opts.temp_schedule, nsteps+1);
-    val epsilons = loginterp(opts.eps_schedule, nsteps+1);
+    val learning_rates = opts.lr_schedule(nsteps+1);
+    val temperatures = opts.temp_schedule(nsteps+1);
+    val epsilons = opts.eps_schedule(nsteps+1);
     val ndqn = opts.ndqn;
+    val old_lives = zeros(1, npar);
+    val new_lives  = zeros(1, npar);
     
     total_steps = 0;
     block_reward = 0f;
@@ -147,6 +149,7 @@ class NPGalgorithm(
 
   	tic;
   	var istep = ndqn;
+  	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
@@ -171,6 +174,7 @@ class NPGalgorithm(
   			val probs = doeps *@ rand_actions + (1-doeps) *@ aprobs;               // Blend with epsilon-greedy
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
+  			for (i <- 0 until npar) new_lives(i) = envs(i).lives();
   			times(2) = toc;
 
   			for (j <- 0 until npar) {                                              // process the observation
@@ -192,6 +196,11 @@ class NPGalgorithm(
   			if (envs(0).opts.endEpochAtReward) {
   				dones <-- (dones + (rewards != 0f) > 0f);
   			}
+  			
+  			if (envs(0).opts.endEpochAtDeath) {
+  				dones <-- (dones + (new_lives < old_lives) > 0f);
+  			}
+  			old_lives <-- new_lives;
 
   			state_memory(?,?,?,(i*npar)->((i+1)*npar)) = state;
   			action_memory(i,?) = actions;
@@ -209,7 +218,7 @@ class NPGalgorithm(
   		val v_next = q_next dot q_prob;
   		times(5) = toc;
 
-  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next; // Add to reward mem if no actual reward
+  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next *@ opts.discount_factor; // Add to reward mem if no actual reward
   		for (i <- (ndqn-2) to 0 by -1) {
   			// Propagate rewards back in time. Actual rewards override predicted rewards. 
   			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
@@ -262,9 +271,9 @@ object NPGalgorithm {
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
   	
-  	var lr_schedule = (0f \ 3e-6f on 1f \ 3e-6f);    // Learning rate schedule
-  	var eps_schedule = (0f \ 0.3f on 1f \ 0.1f);     // Epsilon schedule
-  	var temp_schedule = (0f \ 1f on 1f \ 1f);        // Temperature schedule
+  	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
+  	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
+  	var temp_schedule = linterp(0f \ 1f on 1f \ 1f, _:Int);        // Temperature schedule
   }
   
   class Options extends Opts {}

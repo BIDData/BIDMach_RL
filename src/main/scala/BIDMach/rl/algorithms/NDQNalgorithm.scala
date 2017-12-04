@@ -101,9 +101,9 @@ class NDQNalgorithm(
   def train {
     val nsteps = opts.nsteps;
     val nwindow = opts.nwindow;
-    val learning_rates = loginterp(opts.lr_schedule, nsteps+1);
-    val temperatures = loginterp(opts.temp_schedule, nsteps+1);
-    val epsilons = loginterp(opts.eps_schedule, nsteps+1);
+    val learning_rates = opts.lr_schedule(nsteps+1);
+    val temperatures = opts.temp_schedule(nsteps+1);
+    val epsilons = opts.eps_schedule(nsteps+1);
     val ndqn = opts.ndqn;
     val old_lives = zeros(1, npar);
     val new_lives  = zeros(1, npar);
@@ -283,9 +283,9 @@ object NDQNalgorithm {
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
   	
-  	var lr_schedule = (0f \ 3e-6f on 1f \ 3e-6f);    // Learning rate schedule
-  	var eps_schedule = (0f \ 0.3f on 1f \ 0.1f);     // Epsilon schedule
-  	var temp_schedule = (0f \ 1f on 1f \ 1f);        // Temperature schedule
+  	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
+  	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
+  	var temp_schedule = linterp(0f \ 1f on 1f \ 1f, _:Int);        // Temperature schedule
   }
   
   class Options extends Opts {}
