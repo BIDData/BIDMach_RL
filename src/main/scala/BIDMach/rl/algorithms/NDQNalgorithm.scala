@@ -168,17 +168,17 @@ class NDQNalgorithm(
   		while (i < xdqn && !done) {
   			times(0) = toc;
   			zstate ~ state - mean_state;
-  			q_estimator.predict(zstate);                                            // get the next action probabilities etc from the policy
+  			q_estimator.predict(zstate);                                           // get the next action probabilities etc from the policy
   			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
   			times(1) = toc;
 
   			val probs = (maxi(preds) == preds);
   			probs ~ probs / sum(probs);
-  			if (i == xdqn-1) {
-  			  if (opts.score_exact) {                                               // Dont blend in environment 0
+  			if (i == xdqn-1 || ! opts.q_exact_policy) {
+  			  if (opts.score_exact) {                                              // if score_exact dont epsilon-blend in environment 0
   			  	probs(?,1->npar) = (epsilon *@ rand_actions(?,1->npar)) + ((1-epsilon) *@ probs(?,1->npar));          
   			  } else {
-  			  	probs ~ (epsilon *@ rand_actions) + ((1-epsilon) *@ probs);         // Blend with epsilon-greedy
+  			  	probs ~ (epsilon *@ rand_actions) + ((1-epsilon) *@ probs);        // Blend with epsilon-greedy
   			  }
   			}
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
@@ -295,6 +295,7 @@ object NDQNalgorithm {
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
   	var score_exact = false;                         // Score the true policy only (in env 0)
+  	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
   	
   	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
   	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
