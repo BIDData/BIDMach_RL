@@ -171,9 +171,11 @@ class NDQNalgorithm(
   			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
   			times(1) = toc;
 
-  			val bestp = (maxi(preds) == preds);
-  			bestp ~ bestp / sum(bestp);
-  			val probs = epsilon *@ rand_actions + (1-epsilon) *@ bestp;            // Blend with epsilon-greedy
+  			val probs = (maxi(preds) == preds);
+  			probs ~ probs / sum(probs);
+  			if (i == ndqn-1) {
+  				probs ~ (epsilon *@ rand_actions) + ((1-epsilon) *@ probs);            // Blend with epsilon-greedy
+  			}
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
   			for (i <- 0 until npar) new_lives(i) = envs(i).lives();
