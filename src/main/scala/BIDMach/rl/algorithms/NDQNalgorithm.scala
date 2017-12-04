@@ -39,6 +39,7 @@ class NDQNalgorithm(
 	var mean_state:FMat = null;
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
+	var xhist:FMat = null;
 	
 	var q_estimator:Estimator = null;
 	var t_estimator:Estimator = null;
@@ -66,6 +67,7 @@ class NDQNalgorithm(
 	  saved_dones = zeros(1, save_length);
 	  saved_lives = zeros(1, save_length);
 	  saved_preds = zeros(nactions, save_length);
+	  xhist = zeros(1, opts.ndqn);
 	  
 	  print("Initializing Environments")
 	  for (i <- 0 until npar) {
@@ -107,6 +109,8 @@ class NDQNalgorithm(
     val ndqn = opts.ndqn;
     val old_lives = zeros(1, npar);
     val new_lives  = zeros(1, npar);
+    val u0 = math.pow(1 - 1/opts.ndqn_mean, opts.ndqn);
+    val v0 = math.log(1 - 1/opts.ndqn_mean)
     
     total_steps = 0;
     block_reward = 0f;
@@ -164,7 +168,9 @@ class NDQNalgorithm(
   		if (istep % targwin < ndqn) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
 
   		var i = 0;
-  		val xdqn = 1 + rn.nextInt(ndqn);
+  		val rr = math.log(u0 + (1-u0)*rn.nextDouble())/v0;
+  		val xdqn = math.min(ndqn, 1 + math.floor(rr).toInt);
+  		xhist(0, xdqn-1) += 1;
   		while (i < xdqn && !done) {
   			times(0) = toc;
   			zstate ~ state - mean_state;
@@ -230,9 +236,10 @@ class NDQNalgorithm(
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
   		val probs = (maxi(q_next) == q_next);
   		probs ~ probs / sum(probs);
-//  		probs ~ ((1-epsilon) *@ probs) + (epsilon*rand_actions);               // Blend with epsilon-greedy
+  	  if (! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend
+  				probs(?,opts.nexact->npar) = (epsilon *@ rand_actions(?,opts.nexact->npar)) + ((1-epsilon) *@ probs(?,opts.nexact->npar));          
+  	  }
   		val v_next = q_next dot probs;
-//  		val v_next = maxi(q_next);
   		times(5) = toc;
 
   		reward_memory(xdqn-1,?) = reward_memory(xdqn-1,?) + (1f-done_memory(xdqn-1,?)) *@ opts.discount_factor *@ v_next ; // Propagate rewards from Q-values at non-final states.
@@ -291,6 +298,7 @@ object NDQNalgorithm {
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight 
   	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
+  	var ndqn_mean = 3f;
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
   	
   	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
