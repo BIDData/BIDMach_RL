@@ -142,8 +142,8 @@ class NDQNalgorithm(
   	var actions = izeros(1,npar);
   	var action_probs:FMat = null;
   	val rand_actions = ones(nactions, npar) * (1f/nactions);
-  	val targwin = opts.target_window / ndqn * ndqn; 
-  	val printsteps0 = opts.print_steps / ndqn * ndqn; 
+  	val targwin = opts.target_window; 
+  	val printsteps0 = opts.print_steps; 
   	  	
   	val state_memory = zeros(envs(0).statedims\opts.nwindow\(npar*ndqn));
   	val action_memory = izeros(ndqn\npar);
@@ -165,12 +165,13 @@ class NDQNalgorithm(
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
   		t_estimator.setConsts2(1/temp, opts.entropy_weight);
 
-  		if (istep % targwin < ndqn) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
-
   		var i = 0;
   		val rr = math.log(u0 + (1-u0)*rn.nextDouble())/v0;
   		val xdqn = math.min(ndqn, 1 + math.floor(rr).toInt);
   		xhist(0, xdqn-1) += 1;
+  		
+  		if ((istep+xdqn) % targwin < ndqn && istep % targwin >= ndqn) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
+
   		while (i < xdqn && !done) {
   			times(0) = toc;
   			zstate ~ state - mean_state;
