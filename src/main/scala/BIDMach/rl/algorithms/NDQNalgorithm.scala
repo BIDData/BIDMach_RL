@@ -40,6 +40,7 @@ class NDQNalgorithm(
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	var xhist:FMat = null;
+	var epsilon:FMat = null;
 	
 	var q_estimator:Estimator = null;
 	var t_estimator:Estimator = null;
@@ -162,7 +163,7 @@ class NDQNalgorithm(
   		val lr = learning_rates(istep);                                          // Update the decayed learning rate
   		val temp = temperatures(istep);                                          // Current temperature 
 //  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
-  		val epsilon = exp(- opts.lambda * (1 - row(0->npar)/npar))
+  	  epsilon = exp(- opts.lambda * (1 - row(0->npar)/npar))
   		
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
   		t_estimator.setConsts2(1/temp, opts.entropy_weight);
