@@ -110,7 +110,8 @@ class NDQNalgorithm(
     val old_lives = zeros(1, npar);
     val new_lives  = zeros(1, npar);
     val u0 = math.pow(1 - 1/opts.ndqn_mean, opts.ndqn);
-    val v0 = math.log(1 - 1/opts.ndqn_mean)
+    val v0 = math.log(1 - 1/opts.ndqn_mean);
+    val irange = irow(opts.nexact->npar);
     
     total_steps = 0;
     block_reward = 0f;
@@ -183,7 +184,7 @@ class NDQNalgorithm(
   			val probs = (maxi(preds) == preds);
   			probs ~ probs / sum(probs);
   			if (i == xdqn-1 || ! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend in environment 0
-  				probs(?,opts.nexact->npar) = (epsilon *@ rand_actions(?,opts.nexact->npar)) + ((1-epsilon) *@ probs(?,opts.nexact->npar));          
+  			  probs(?,irange) = epsilon(0,irange) *@ rand_actions(?,irange) + (1-epsilon(0,irange)) *@ probs(?,irange);          
   			}
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
@@ -239,7 +240,7 @@ class NDQNalgorithm(
   		val probs = (maxi(q_next) == q_next);
   		probs ~ probs / sum(probs);
   	  if (! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend
-  				probs(?,opts.nexact->npar) = (epsilon *@ rand_actions(?,opts.nexact->npar)) + ((1-epsilon) *@ probs(?,opts.nexact->npar));          
+  				probs(?,irange) = epsilon(0,irange) *@ rand_actions(?,irange) + (1-epsilon(0,irange)) *@ probs(?,irange);          
   	  }
   		val v_next = q_next dot probs;
   		times(5) = toc;
