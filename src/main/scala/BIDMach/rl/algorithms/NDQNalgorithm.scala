@@ -258,7 +258,7 @@ class NDQNalgorithm(
   			myLogger.info("Iter %5d, Time %4.1f, Loss %7.6f, Entropy %5.4f, Epoch %d, Rew/Ep %5.4f, Cum Rew/Ep %5.4f" 
   					format(istep, t, block_loss/printsteps0/npar, block_entropy/printsteps0/npar, 
   							total_epochs, block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)));
-  			reward_plot(istep/printsteps0-1) = block_reward/math.max(1,total_epochs-last_epochs);
+  			reward_plot((istep+xdqn)/printsteps0-1) = block_reward/math.max(1,total_epochs-last_epochs);
   			last_epochs = total_epochs;
   			block_reward = 0f;
   			block_loss = 0f;
