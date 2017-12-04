@@ -164,7 +164,8 @@ class NDQNalgorithm(
   		if (istep % targwin < ndqn) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
 
   		var i = 0;
-  		while (i < ndqn && !done) {
+  		val xdqn = 1 + rn.nextInt(ndqn-1);
+  		while (i < xdqn && !done) {
   			times(0) = toc;
   			zstate ~ state - mean_state;
   			q_estimator.predict(zstate);                                            // get the next action probabilities etc from the policy
@@ -173,7 +174,7 @@ class NDQNalgorithm(
 
   			val probs = (maxi(preds) == preds);
   			probs ~ probs / sum(probs);
-  			if (i == ndqn-1) {
+  			if (i == xdqn-1) {
   				probs ~ (epsilon *@ rand_actions) + ((1-epsilon) *@ probs);            // Blend with epsilon-greedy
   			}
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
@@ -230,14 +231,14 @@ class NDQNalgorithm(
 //  		val v_next = maxi(q_next);
   		times(5) = toc;
 
-  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ opts.discount_factor *@ v_next ; // Propagate rewards from Q-values at non-final states.
-  		for (i <- (ndqn-2) to 0 by -1) {
+  		reward_memory(xdqn-1,?) = reward_memory(xdqn-1,?) + (1f-done_memory(xdqn-1,?)) *@ opts.discount_factor *@ v_next ; // Propagate rewards from Q-values at non-final states.
+  		for (i <- (xdqn-2) to 0 by -1) {
   			// Propagate rewards back in time, but not across epochs. 
   			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ opts.discount_factor *@ reward_memory(i+1,?);
   		}
 
   		// Now compute gradients for the states/actions/rewards saved in the table.
-  		for (i <- 0 until ndqn) {
+  		for (i <- 0 until xdqn) {
   			new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar));
   			zstate ~ new_state - mean_state;
   			q_estimator.gradient(zstate, action_memory(i,?), reward_memory(i,?), npar);
@@ -252,7 +253,7 @@ class NDQNalgorithm(
 
   		dtimes(0,4->7) = dtimes(0,4->7) + (times(0,5->8) - times(0,4->7));
   		val t = toc;
-  		if (istep % printsteps0 == 0) {
+  		if ((istep+xdqn) % printsteps0 < ndqn && istep % printsteps0 >= ndqn) {
   			total_reward += block_reward;
   			myLogger.info("Iter %5d, Time %4.1f, Loss %7.6f, Entropy %5.4f, Epoch %d, Rew/Ep %5.4f, Cum Rew/Ep %5.4f" 
   					format(istep, t, block_loss/printsteps0/npar, block_entropy/printsteps0/npar, 
@@ -263,7 +264,7 @@ class NDQNalgorithm(
   			block_loss = 0f;
   			block_entropy = 0f;
   		}
-  		istep += ndqn;
+  		istep += xdqn;
   	}
   	Mat.useGPUcache = GPUcacheState;
   	Mat.useCache = cacheState;
