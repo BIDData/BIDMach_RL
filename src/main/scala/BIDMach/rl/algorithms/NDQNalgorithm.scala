@@ -175,7 +175,11 @@ class NDQNalgorithm(
   			val probs = (maxi(preds) == preds);
   			probs ~ probs / sum(probs);
   			if (i == xdqn-1) {
-  				probs ~ (epsilon *@ rand_actions) + ((1-epsilon) *@ probs);            // Blend with epsilon-greedy
+  			  if (opts.score_exact) {                                               // Dont blend in environment 0
+  			  	probs(?,1->npar) = (epsilon *@ rand_actions(?,1->npar)) + ((1-epsilon) *@ probs(?,1->npar));          
+  			  } else {
+  			  	probs ~ (epsilon *@ rand_actions) + ((1-epsilon) *@ probs);         // Blend with epsilon-greedy
+  			  }
   			}
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
@@ -194,8 +198,13 @@ class NDQNalgorithm(
   			saved_lives(0,igame) = envs(0).lives();
   			igame = (igame+1) % save_length;
   			
-  			total_epochs += sum(dones).v.toInt;
-  			block_reward += sum(rewards).v;
+  			if (opts.score_exact) {
+  				total_epochs += dones(0).toInt;
+  				block_reward += rewards(0);
+  			} else {
+  				total_epochs += sum(dones).v.toInt;
+  				block_reward += sum(rewards).v;
+  			}
   			min(rewards, envs(0).opts.limit_reward_incr(1), rewards)
   			max(rewards, envs(0).opts.limit_reward_incr(0), rewards)
   			
@@ -223,10 +232,9 @@ class NDQNalgorithm(
   		zstate ~ new_state - mean_state;
   		t_estimator.predict(zstate);
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
-  		val bestp = (maxi(q_next) == q_next);
-  		bestp ~ bestp / sum(bestp);
-//  		val probs = (1-epsilon) *@ bestp + epsilon*rand_actions;               // Blend with epsilon-greedy
-  		val probs = bestp;
+  		val probs = (maxi(q_next) == q_next);
+  		probs ~ probs / sum(probs);
+//  		probs ~ ((1-epsilon) *@ probs) + (epsilon*rand_actions);               // Blend with epsilon-greedy
   		val v_next = q_next dot probs;
 //  		val v_next = maxi(q_next);
   		times(5) = toc;
@@ -286,6 +294,7 @@ object NDQNalgorithm {
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
+  	var score_exact = false;                         // Score the true policy only (in env 0)
   	
   	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
   	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
