@@ -174,12 +174,8 @@ class NDQNalgorithm(
 
   			val probs = (maxi(preds) == preds);
   			probs ~ probs / sum(probs);
-  			if (i == xdqn-1 || ! opts.q_exact_policy) {
-  			  if (opts.score_exact) {                                              // if score_exact dont epsilon-blend in environment 0
-  			  	probs(?,1->npar) = (epsilon *@ rand_actions(?,1->npar)) + ((1-epsilon) *@ probs(?,1->npar));          
-  			  } else {
-  			  	probs ~ (epsilon *@ rand_actions) + ((1-epsilon) *@ probs);        // Blend with epsilon-greedy
-  			  }
+  			if (i == xdqn-1 || ! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend in environment 0
+  				probs(?,opts.nexact->npar) = (epsilon *@ rand_actions(?,opts.nexact->npar)) + ((1-epsilon) *@ probs(?,opts.nexact->npar));          
   			}
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
@@ -198,9 +194,9 @@ class NDQNalgorithm(
   			saved_lives(0,igame) = envs(0).lives();
   			igame = (igame+1) % save_length;
   			
-  			if (opts.score_exact) {
-  				total_epochs += dones(0).toInt;
-  				block_reward += rewards(0);
+  			if (opts.nexact > 0) {
+  				total_epochs += sum(dones(0->opts.nexact)).v.toInt;
+  				block_reward += sum(rewards(0->opts.nexact)).v;
   			} else {
   				total_epochs += sum(dones).v.toInt;
   				block_reward += sum(rewards).v;
@@ -293,9 +289,9 @@ object NDQNalgorithm {
   	var nwindow = 4;                                 // Sensing window = last n images in a state
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
-  	var entropy_weight = 1e-4f;                      // Entropy regularization weight
-  	var score_exact = false;                         // Score the true policy only (in env 0)
+  	var entropy_weight = 1e-4f;                      // Entropy regularization weight 
   	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
+  	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
   	
   	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
   	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
