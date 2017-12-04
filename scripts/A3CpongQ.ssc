@@ -24,18 +24,14 @@ opts.gsq_decay = 0.99f;                        // Square gradient Decay factor f
 //opts.vel_decay = 0.9f;                         // Momentum decay
 //opts.clipByValue = 1f;                         // gradient clipping
 
-opts.lr_schedule = (0f \ 3e-6f on
-		   0.8f \ 3e-6f on
-		   0.9f \ 3e-7f on
-		   0.9f \ 1e-10f on
-		   1f \ 1e-10f); 
+opts.lr_schedule = linterp(0f \ 3e-5f on
+			   1f \ 3e-5f, _:Int); 
 
-opts.temp_schedule = (0f \ 0.5f on 
-		     0.8f \ 0.1f on 
-		     0.9f \ 0.01f on
-		     0.9f \ 0.001f on
-                     1f \ 0.001f);
-
+opts.temp_schedule = linterp(0f \ 0.5f on 
+			     0.8f \ 0.1f on 
+			     0.9f \ 0.01f on
+			     0.9f \ 0.001f on  
+			     1f \ 0.001f, _:Int);
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;
@@ -44,17 +40,11 @@ opts.nactions = 3;
 
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
-envopts.rom_name="Pong.bin";                 
-envopts.endEpochAtReward = true;          
-envopts.xoff = 0;
-envopts.yoff = 35;
-envopts.pool = false;
-envopts.shrink = true;
-envopts.mode = ALE.ALEimageModeBinarize;
-envopts.background = 34;
-envopts.frameskip = irow(4,4);
-envopts.repeat_action_probability = 0f;
-envopts.limit_reward_incr = row(-1f,1f);
+val gamename0 = System.getProperty("user.arg0");
+val gamename = if (gamename0.asInstanceOf[AnyRef] != null) gamename0 else "Pong";
+println("gamename = %s" format gamename);
+opts.logfile = "logA3CQ_"+gamename+".txt"
+:load gamedefs.ssc
 
 val envs = new Array[Environment](npar);
 for (i <- 0 until npar) {
