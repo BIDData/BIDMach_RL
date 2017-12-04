@@ -222,15 +222,16 @@ class NDQNalgorithm(
   		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
   		val bestp = (maxi(q_next) == q_next);
   		bestp ~ bestp / sum(bestp);
-  		val probs = (1-epsilon) *@ bestp + epsilon*rand_actions;               // Blend with epsilon-greedy
+//  		val probs = (1-epsilon) *@ bestp + epsilon*rand_actions;               // Blend with epsilon-greedy
+  		val probs = bestp;
   		val v_next = q_next dot probs;
 //  		val v_next = maxi(q_next);
   		times(5) = toc;
 
-  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ v_next *@ opts.discount_factor; // Propagate rewards from Q-values at non-final states.
+  		reward_memory(ndqn-1,?) = reward_memory(ndqn-1,?) + (1f-done_memory(ndqn-1,?)) *@ opts.discount_factor *@ v_next ; // Propagate rewards from Q-values at non-final states.
   		for (i <- (ndqn-2) to 0 by -1) {
   			// Propagate rewards back in time, but not across epochs. 
-  			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ reward_memory(i+1,?) *@ opts.discount_factor;
+  			reward_memory(i,?) = reward_memory(i,?) + (1f - done_memory(i,?)) *@ opts.discount_factor *@ reward_memory(i+1,?);
   		}
 
   		// Now compute gradients for the states/actions/rewards saved in the table.
