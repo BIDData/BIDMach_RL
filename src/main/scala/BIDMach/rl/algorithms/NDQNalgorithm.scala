@@ -142,8 +142,8 @@ class NDQNalgorithm(
   	var actions = izeros(1,npar);
   	var action_probs:FMat = null;
   	val rand_actions = ones(nactions, npar) * (1f/nactions);
-  	val targwin = opts.target_window; 
-  	val printsteps0 = opts.print_steps; 
+  	val targwin = math.max(opts.target_window, opts.ndqn*2);
+  	val printsteps0 = opts.print_steps;
   	  	
   	val state_memory = zeros(envs(0).statedims\opts.nwindow\(npar*ndqn));
   	val action_memory = izeros(ndqn\npar);
@@ -160,14 +160,15 @@ class NDQNalgorithm(
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                          // Update the decayed learning rate
   		val temp = temperatures(istep);                                          // Current temperature 
-  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
+//  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
+  		val epsilon = exp(- opts.lambda * (1 - row(0->npar)/npar))
   		
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
   		t_estimator.setConsts2(1/temp, opts.entropy_weight);
 
   		var i = 0;
   		val rr = math.log(u0 + (1-u0)*rn.nextDouble())/v0;
-  		val xdqn = math.min(ndqn, 1 + math.floor(rr).toInt);
+  		val xdqn = math.max(1, math.min(ndqn, 1 + math.floor(rr).toInt));
   		xhist(0, xdqn-1) += 1;
   		
   		if ((istep+xdqn) % targwin < ndqn && istep % targwin >= ndqn) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
@@ -301,6 +302,7 @@ object NDQNalgorithm {
   	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
   	var ndqn_mean = 3f;
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
+  	var lambda = 4f;                                  // Spread of per-policy epsilons
   	
   	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
   	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
