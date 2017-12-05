@@ -40,7 +40,6 @@ class NDQNalgorithm(
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
 	var xhist:FMat = null;
-	var epsilon:FMat = null;
 	
 	var q_estimator:Estimator = null;
 	var t_estimator:Estimator = null;
@@ -156,14 +155,15 @@ class NDQNalgorithm(
   	tic;
   	istep = ndqn;
   	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
-  	epsilon = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
+  	val epsilons0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
   	
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = learning_rates(istep);                                          // Update the decayed learning rate
   		val temp = temperatures(istep);                                          // Current temperature 
-//  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
+  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
+  		val epsilons1 = epsilons0 * epsilon;
   		
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
   		t_estimator.setConsts2(1/temp, opts.entropy_weight);
@@ -185,7 +185,7 @@ class NDQNalgorithm(
   			val probs = (maxi(preds) == preds);
   			probs ~ probs / sum(probs);
   			if (i == xdqn-1 || ! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend in environment 0
-  			  probs(?,irange) = epsilon(0,irange) *@ rand_actions(?,irange) + (1-epsilon(0,irange)) *@ probs(?,irange);          
+  			  probs(?,irange) = epsilons1(0,irange) *@ rand_actions(?,irange) + (1-epsilons1(0,irange)) *@ probs(?,irange);          
   			}
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
@@ -241,7 +241,7 @@ class NDQNalgorithm(
   		val probs = (maxi(q_next) == q_next);
   		probs ~ probs / sum(probs);
   	  if (! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend
-  				probs(?,irange) = epsilon(0,irange) *@ rand_actions(?,irange) + (1-epsilon(0,irange)) *@ probs(?,irange);          
+  				probs(?,irange) = epsilons1(0,irange) *@ rand_actions(?,irange) + (1-epsilons1(0,irange)) *@ probs(?,irange);          
   	  }
   		val v_next = q_next dot probs;
   		times(5) = toc;
@@ -304,7 +304,7 @@ object NDQNalgorithm {
   	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
   	var ndqn_mean = 3f;
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
-  	var lambda = 4f;                                  // Spread of per-policy epsilons
+  	var lambda = 10f;                                  // Spread of per-policy epsilons
   	
   	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
   	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
