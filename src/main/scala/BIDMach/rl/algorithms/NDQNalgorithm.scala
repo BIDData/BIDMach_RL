@@ -155,7 +155,7 @@ class NDQNalgorithm(
   	tic;
   	istep = ndqn;
   	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
-  	val epsilons0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
+  	val epsilonvec0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
   	
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
@@ -163,7 +163,7 @@ class NDQNalgorithm(
   		val lr = learning_rates(istep);                                          // Update the decayed learning rate
   		val temp = temperatures(istep);                                          // Current temperature 
   		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
-  		val epsilons1 = epsilons0 * epsilon;
+  		val epsilonvec = epsilonvec0 * epsilon;
   		
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
   		t_estimator.setConsts2(1/temp, opts.entropy_weight);
@@ -185,7 +185,7 @@ class NDQNalgorithm(
   			val probs = (maxi(preds) == preds);
   			probs ~ probs / sum(probs);
   			if (i == xdqn-1 || ! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend in environment 0
-  			  probs(?,irange) = epsilons1(0,irange) *@ rand_actions(?,irange) + (1-epsilons1(0,irange)) *@ probs(?,irange);          
+  			  probs(?,irange) = epsilonvec(0,irange) *@ rand_actions(?,irange) + (1-epsilonvec(0,irange)) *@ probs(?,irange);          
   			}
   			actions <-- multirnd(probs);                                           // Choose actions using the policy 
   			val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
@@ -241,7 +241,7 @@ class NDQNalgorithm(
   		val probs = (maxi(q_next) == q_next);
   		probs ~ probs / sum(probs);
   	  if (! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend
-  				probs(?,irange) = epsilons1(0,irange) *@ rand_actions(?,irange) + (1-epsilons1(0,irange)) *@ probs(?,irange);          
+  				probs(?,irange) = epsilonvec(0,irange) *@ rand_actions(?,irange) + (1-epsilonvec(0,irange)) *@ probs(?,irange);          
   	  }
   		val v_next = q_next dot probs;
   		times(5) = toc;
