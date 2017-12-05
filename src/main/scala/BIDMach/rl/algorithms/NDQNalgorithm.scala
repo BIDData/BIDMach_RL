@@ -156,6 +156,7 @@ class NDQNalgorithm(
   	tic;
   	istep = ndqn;
   	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
+  	epsilon = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
   	
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
@@ -163,7 +164,6 @@ class NDQNalgorithm(
   		val lr = learning_rates(istep);                                          // Update the decayed learning rate
   		val temp = temperatures(istep);                                          // Current temperature 
 //  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
-  	  epsilon = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar))
   		
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
   		t_estimator.setConsts2(1/temp, opts.entropy_weight);
