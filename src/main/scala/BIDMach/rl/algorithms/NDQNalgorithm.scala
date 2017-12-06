@@ -111,8 +111,8 @@ class NDQNalgorithm(
     val ndqn = opts.ndqn;
     val old_lives = zeros(1, npar);
     val new_lives  = zeros(1, npar);
-    val u0 = math.pow(1 - 1/ndqn, ndqn_max);
-    val v0 = math.log(1 - 1/ndqn);
+    val u0 = math.pow(1 - 1.0/ndqn, ndqn_max);
+    val v0 = math.log(1 - 1.0/ndqn);
     val irange = irow(opts.nexact->npar);
     
     total_steps = 0;
