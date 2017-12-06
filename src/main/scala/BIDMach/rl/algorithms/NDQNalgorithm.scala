@@ -39,6 +39,7 @@ class NDQNalgorithm(
 	var mean_state:FMat = null;
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
+	var ndqn_max:Int = 0;
 	var xhist:FMat = null;
 	
 	var q_estimator:Estimator = null;
@@ -67,7 +68,8 @@ class NDQNalgorithm(
 	  saved_dones = zeros(1, save_length);
 	  saved_lives = zeros(1, save_length);
 	  saved_preds = zeros(nactions, save_length);
-	  xhist = zeros(1, opts.ndqn);
+	  ndqn_max = if (opts.ndqn_max == 0) opts.ndqn * 4 else opts.ndqn_max;
+	  xhist = zeros(1, ndqn_max);
 	  
 	  print("Initializing Environments")
 	  for (i <- 0 until npar) {
@@ -109,8 +111,8 @@ class NDQNalgorithm(
     val ndqn = opts.ndqn;
     val old_lives = zeros(1, npar);
     val new_lives  = zeros(1, npar);
-    val u0 = math.pow(1 - 1/opts.ndqn_mean, opts.ndqn);
-    val v0 = math.log(1 - 1/opts.ndqn_mean);
+    val u0 = math.pow(1 - 1/ndqn, ndqn_max);
+    val v0 = math.log(1 - 1/ndqn);
     val irange = irow(opts.nexact->npar);
     
     total_steps = 0;
@@ -143,17 +145,17 @@ class NDQNalgorithm(
   	var actions = izeros(1,npar);
   	var action_probs:FMat = null;
   	val rand_actions = ones(nactions, npar) * (1f/nactions);
-  	val targwin = math.max(opts.target_window, opts.ndqn*2);
+  	val targwin = math.max(opts.target_window, ndqn_max*2);
   	val printsteps0 = opts.print_steps;
   	  	
-  	val state_memory = zeros(envs(0).statedims\opts.nwindow\(npar*ndqn));
-  	val action_memory = izeros(ndqn\npar);
-  	val reward_memory = zeros(ndqn\npar);
-  	val done_memory = zeros(ndqn\npar);
+  	val state_memory = zeros(envs(0).statedims\opts.nwindow\(npar*ndqn_max));
+  	val action_memory = izeros(ndqn_max\npar);
+  	val reward_memory = zeros(ndqn_max\npar);
+  	val done_memory = zeros(ndqn_max\npar);
   	reward_plot = zeros(1, nsteps/printsteps0);
 
   	tic;
-  	istep = ndqn;
+  	istep = ndqn_max;
   	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
   	val epsilonvec0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
   	
@@ -170,10 +172,10 @@ class NDQNalgorithm(
 
   		var i = 0;
   		val rr = math.log(u0 + (1-u0)*rn.nextDouble())/v0;
-  		val xdqn = math.max(1, math.min(ndqn, 1 + math.floor(rr).toInt));
+  		val xdqn = math.max(1, math.min(ndqn_max, 1 + math.floor(rr).toInt));
   		xhist(0, xdqn-1) += 1;
   		
-  		if ((istep+xdqn) % targwin < ndqn && istep % targwin >= ndqn) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
+  		if ((istep+xdqn) % targwin < ndqn_max && istep % targwin >= ndqn_max) t_estimator.update_from(q_estimator);        // Update the target estimator if needed    
 
   		while (i < xdqn && !done) {
   			times(0) = toc;
@@ -268,7 +270,7 @@ class NDQNalgorithm(
 
   		dtimes(0,4->7) = dtimes(0,4->7) + (times(0,5->8) - times(0,4->7));
   		val t = toc;
-  		if ((istep+xdqn) % printsteps0 < ndqn && istep % printsteps0 >= ndqn) {
+  		if ((istep+xdqn) % printsteps0 < ndqn_max && istep % printsteps0 >= ndqn_max) {
   			total_reward += block_reward;
   			myLogger.info("Iter %5d, Time %4.1f, Loss %7.6f, Entropy %5.4f, Epoch %d, Rew/Ep %5.4f, Cum Rew/Ep %5.4f" 
   					format((istep+xdqn)/printsteps0*printsteps0, t, block_loss/printsteps0/npar, block_entropy/printsteps0/npar, 
@@ -294,6 +296,7 @@ object NDQNalgorithm {
     
     var nsteps = 400000;                             // Number of steps to run (game actions per environment)
   	var ndqn = 5;                                    // Number of DQN steps per update
+  	var ndqn_max = 0;
   	var target_window = 50;                          // Interval to update target estimator from q-estimator
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
@@ -302,7 +305,6 @@ object NDQNalgorithm {
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight 
   	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
-  	var ndqn_mean = 3f;
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
   	var lambda = 10f;                                  // Spread of per-policy epsilons
   	
