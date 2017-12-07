@@ -530,6 +530,7 @@ object ALE {
 		(0 until npar).par.foreach((i) => {
 			val nsteps = envs(i).frameskip._1 + rg.nextInt(envs(i).frameskip._2 - envs(i).frameskip._1 + 1);
 			var reward = 0f;
+			val old_lives = envs(i).lives();
 			for (j <- 0 until nsteps) {
 			  reward += envs(i).act(actions(i));
 			  if (envs(i).pool & j == nsteps-2) envs(i).buffer2 = envs(i).getBufferData(envs(i).buffer2);
@@ -538,11 +539,12 @@ object ALE {
 			envs(i).buffer = envs(i).getBufferData(envs(i).buffer);
 			obs(i) = envs(i).copyObs(obs(i));
 			dones(i) = if (envs(i).game_over()) 1f else 0f;
-			if (dones(i) == 1f) {
+		  if (dones(i) == 1f) {
 			  envs(i).reset_game();
-			  if (envs(i).fire_to_start) {
-			    rewards(i) += envs(i).act(1);
-			  }
+			}
+			val new_lives = envs(i).lives();
+			if (envs(i).fire_to_start && (dones(i) == 1f || new_lives < old_lives)) {
+				rewards(i) += envs(i).act(1);
 			}
 		})
 		(obs, rewards, dones)
