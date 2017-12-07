@@ -1,0 +1,66 @@
+// Run this script from the BIDMach_RL/scipts directory, or edit the rom path below to an absolute path. 
+// Game roms should be in BIDMach_RL/roms for the default path to work. 
+
+val rom_dir = "../roms/";
+
+val npar = 16;                                  // Number of parallel environments
+
+class ModelOpts extends NDQNalgorithm.Options with DQNestimator.Opts;
+
+val opts = new ModelOpts;                      // Model options
+opts.entropy_weight = 1e-5f;                   // Entropy regularization weight
+opts.discount_factor = 0.99f;                  // Reward discount factor
+opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for optimizer
+opts.gsq_decay = 0.99f;                        // Squared gradient memory decay factor for MSProp
+
+opts.nsteps = 2000000;                         // Number of steps to run (game actions per environment)
+opts.ndqn = 8;                                 // Number of DQN steps per update
+opts.target_window = 50;                       // Interval to update target estimator from q-estimator
+opts.print_steps = 50000;                      // Number of steps between printouts
+opts.nwindow = 4;                              // Sensing window = last n images in a state
+opts.init_moves = 4000;                        // Upper bound on random number of moves to take initially
+opts.nexact = 1;
+opts.q_exact_policy = true;
+
+opts.hasBias = true;
+opts.tensorFormat = Net.TensorNCHW;
+//opts.clipByValue = 1f;                         // gradient clipping
+
+opts.lr_schedule = linterp(0f \ 3e-5f on
+			   1f \ 3e-5f, _:Int); 
+
+opts.eps_schedule = linterp(0f \ 1f on 
+			    0.9f \ 0.0001f on
+			    1f \ 0.0001f, _:Int);
+
+opts.temp_schedule = linterp(0f \ 0.001f on 
+			     1f \ 0.001f, _:Int);
+
+
+opts.nhidden = 16;                             // Number of hidden layers for estimators
+opts.nhidden2 = 32;
+opts.nhidden3 = 256;
+
+val envopts = new AtariEnvironment.Options
+envopts.rom_dir=rom_dir;
+val gamename0 = System.getProperty("user.arg0");
+val gamename = if (gamename0.asInstanceOf[AnyRef] != null) gamename0 else "Pong";
+println("gamename = %s" format gamename);
+opts.logfile = "logNDQN_"+gamename+".txt"
+
+:load gamedefs.ssc
+
+val envs = new Array[Environment](npar);
+for (i <- 0 until npar) {
+    envopts.random_seed = i;
+    envs(i) = new AtariEnvironment(envopts);
+};
+
+val model = new NDQNalgorithm(envs, AtariEnvironment.stepAll, DQNestimator.build, opts);
+
+model.startup;
+
+println("\nRunning training in the background.\nSaving to file '%s' in the current directory.\nExamine the 'model' variable to track learning state.\n" format opts.logfile);
+
+model.launchTrain
+// model.train
