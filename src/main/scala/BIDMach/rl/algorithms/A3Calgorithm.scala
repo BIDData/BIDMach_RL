@@ -99,8 +99,6 @@ class A3Calgorithm(
   def train {
     val nsteps = opts.nsteps;
     val nwindow = opts.nwindow;
-    val learning_rates = opts.lr_schedule(nsteps+1);
-    val temperatures = opts.temp_schedule(nsteps+1);
     val ndqn = opts.ndqn;
     val old_lives = zeros(1, npar);
     val new_lives  = zeros(1, npar);
@@ -148,8 +146,8 @@ class A3Calgorithm(
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
-  		val lr = learning_rates(istep);                                // update the decayed learning rate
-  		val temp = temperatures(istep);                                // get an epsilon for the eps-greedy policy
+  		val lr = opts.lr_schedule(istep);                                // update the decayed learning rate
+  		val temp = opts.temp_schedule(istep);                                // get an epsilon for the eps-greedy policy
   		estimator.setConsts3(1/temp, opts.entropy_weight, opts.policygrad_weight);
   		
   		reward_memory(0,?) = reward_memory(ndqn,?);
@@ -267,8 +265,8 @@ object A3Calgorithm {
   	var policygrad_weight = 0.3f;                    // Weight of policy gradient compared to regression loss
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
   	
-  	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
-  	var temp_schedule = linterp(0f \ 1f on 1f \ 1f, _:Int);        // Temperature schedule
+  	var lr_schedule:FMat = null;                     // Learning rate schedule
+  	var temp_schedule:FMat = null;                   // Temperature schedule
   }
   
   class Options extends Opts {}

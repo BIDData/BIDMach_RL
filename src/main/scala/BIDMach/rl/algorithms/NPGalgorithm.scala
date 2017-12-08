@@ -153,9 +153,9 @@ class NPGalgorithm(
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
-  		val lr = learning_rates(istep);                                          // Update the decayed learning rate
-  		val temp = temperatures(istep);                                          // Current temperature 
-  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
+  		val lr = opts.lr_schedule(istep);                                          // Update the decayed learning rate
+  		val temp = opts.temp_schedule(istep);                                          // Current temperature 
+  		val epsilon = opts.eps_schedule(istep);                                           // Get an epsilon for the eps-greedy policy
   		
   		q_estimator.setConsts2(temp, opts.entropy_weight);
   		t_estimator.setConsts2(temp, opts.entropy_weight);
@@ -271,9 +271,9 @@ object NPGalgorithm {
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var entropy_weight = 1e-4f;                      // Entropy regularization weight
   	
-  	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
-  	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
-  	var temp_schedule = linterp(0f \ 1f on 1f \ 1f, _:Int);        // Temperature schedule
+  	var lr_schedule:FMat = null;                     // Learning rate schedule
+  	var eps_schedule:FMat = null;                    // Epsilon schedule
+  	var temp_schedule:FMat = null;                   // Temperature schedule
   }
   
   class Options extends Opts {}
