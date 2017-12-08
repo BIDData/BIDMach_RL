@@ -16,7 +16,6 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
   
   var predsLayer:Layer = null;
   var lossLayer:Layer = null;
-  var nentropy = 0;
   
   override def formatStates(s:FMat) = {
     if (net.opts.tensorFormat == Net.TensorNCHW) {
@@ -72,7 +71,7 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 
   override val net = createNet;
   
-  // Get the Q-predictions, action probabilities, entropy and loss for the last forward pass. 
+  // Get the Q-predictions and loss for the last forward pass. 
   override def getOutputs2:(FMat,FMat) = {
     (FMat(predsLayer.output),
      FMat(lossLayer.output)
