@@ -14,12 +14,7 @@ import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64;
 
 class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Estimator {
   
-  var invtemp:ConstantNode = null;
-  var entropyw:ConstantNode = null;
-  
   var predsLayer:Layer = null;
-  var probsLayer:Layer = null;
-  var entropyLayer:Layer = null;
   var lossLayer:Layer = null;
   var nentropy = 0;
   
@@ -41,14 +36,9 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  val in =      input();
 	  val actions = input();
 	  val target =  input();
-	  
-	  // Settable param layers;
-	  invtemp  =    const(1f);
-	  entropyw=     const(1f);
 
 	  // Random constants
 	  val minus1 =  const(-1f);
-	  val eps =     const(1e-6f);
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias);
@@ -61,19 +51,12 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  val relu3 =   relu(fc3)(inplace=opts.inplace);
 	  val preds =   linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias); 
 
-	  // Probabilitylayers
-	  val probs =   softmax(preds *@ invtemp); 
-
-	  // Entropy layers
-	  val entropy = (ln(probs + eps) dot probs) *@ minus1;
-	  val nentropy= Net.defaultNodeList.length;
-
 	  // Action loss layers
 	  val diff =    target - preds(actions);
 	  val loss =    diff *@ diff;                     // Base loss layer.
 
 	  // Total weighted negloss, maximize this
-	  val out =     loss *@ minus1 + entropy *@ entropyw;
+	  val out =     loss *@ minus1 
 
 	  opts.nodeset = Net.getDefaultNodeSet;
 	  
@@ -82,27 +65,16 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  net.createLayers;
 	  
 	  predsLayer = preds.myLayer;
-	  probsLayer = probs.myLayer;
-	  entropyLayer = entropy.myLayer;
 	  lossLayer = loss.myLayer;
 	  
 	  net;
   }
 
   override val net = createNet;
-
-
-	// Set temperature and entropy weight
-  override def setConsts2(invtemperature:Float, entropyWeight:Float) = {
-	  invtemp.value =  invtemperature;
-	  entropyw.value =  entropyWeight;
-  }
   
   // Get the Q-predictions, action probabilities, entropy and loss for the last forward pass. 
-  override def getOutputs4:(FMat,FMat,FMat,FMat) = {
+  override def getOutputs2:(FMat,FMat) = {
     (FMat(predsLayer.output),
-     FMat(probsLayer.output),
-     FMat(entropyLayer.output),
      FMat(lossLayer.output)
     		)    
   }

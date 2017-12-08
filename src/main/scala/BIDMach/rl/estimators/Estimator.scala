@@ -156,6 +156,10 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     
     def setConsts3(a:Float, b:Float, c:Float) = {}
     
+    def getOutputs2:(FMat,FMat) = {(zeros(1,1), zeros(1,1))}
+        
+    def getOutputs3:(FMat,FMat,FMat) = {(zeros(1,1), zeros(1,1), zeros(1,1))}
+    
     def getOutputs4:(FMat,FMat,FMat,FMat) = {(zeros(1,1), zeros(1,1), zeros(1,1), zeros(1,1))}
 };
 

@@ -8,7 +8,6 @@ val npar = 16;                                  // Number of parallel environmen
 class ModelOpts extends NDQNalgorithm.Options with DQNestimator.Opts;
 
 val opts = new ModelOpts;                      // Model options
-opts.entropy_weight = 1e-4f;                   // Entropy regularization weight
 opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for optimizer
 opts.gsq_decay = 0.99f;                        // Squared gradient memory decay factor for MSProp
@@ -31,8 +30,6 @@ opts.eps_schedule = linterp(0f \ 0.3f on
                             0.9f \ 0.0001f on
                             1f \ 0.0001f, opts.nsteps);
 
-opts.temp_schedule = linterp(0f \ 0.001f on 
-                             1f \ 0.001f, opts.nsteps);
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;

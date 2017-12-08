@@ -28,8 +28,8 @@ class NDQNalgorithm(
 	var total_steps = 0;
 	var block_reward = 0f;
 	var total_reward = 0f;
-	var block_entropy = 0f;
 	var block_loss = 0f;
+	var block_entropy = 0f;
 	var block_count = 0;
 	var total_epochs = 0;
 	var total_time = 0f;
@@ -115,8 +115,8 @@ class NDQNalgorithm(
     total_steps = 0;
     block_reward = 0f;
     total_reward = 0f;
-    block_entropy = 0f;
     block_loss = 0f;
+    block_entropy = 0f;
     block_count = 0;
     total_epochs = 0;
     total_time = 0f;
@@ -155,17 +155,14 @@ class NDQNalgorithm(
   	istep = ndqn_max;
   	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
   	val epsilonvec0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
+  	var nupdates = 0;
   	
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = opts.lr_schedule(istep);                                          // Update the decayed learning rate
-  		val temp = opts.temp_schedule(istep);                                      // Current temperature 
   		val epsilon = opts.eps_schedule(istep);                                    // Get an epsilon for the eps-greedy policy
   		val epsilonvec = epsilonvec0 * epsilon;
-  		
-  		q_estimator.setConsts2(1/temp, opts.entropy_weight);
-  		t_estimator.setConsts2(1/temp, opts.entropy_weight);
 
   		var i = 0;
   		val rr = math.log(u0 + (1-u0)*rn.nextDouble())/v0;
@@ -203,12 +200,16 @@ class NDQNalgorithm(
   			saved_lives(0,igame) = envs(0).lives();
   			igame = (igame+1) % save_length;
   			
+  			nupdates += 1;
+  			val action_probs = probs(actions + irow(0->probs.ncols)*probs.nrows);
   			if (opts.nexact > 0) {
   				total_epochs += sum(dones(0->opts.nexact)).v.toInt;
   				block_reward += sum(rewards(0->opts.nexact)).v;
+  				block_entropy -= sum(ln(action_probs(0->opts.nexact))).v/opts.nexact;
   			} else {
   				total_epochs += sum(dones).v.toInt;
   				block_reward += sum(rewards).v;
+  				block_entropy -= sum(ln(action_probs)).v/action_probs.length;
   			}
   			min(rewards, envs(0).opts.limit_reward_incr(1), rewards)
   			max(rewards, envs(0).opts.limit_reward_incr(0), rewards)
@@ -236,7 +237,7 @@ class NDQNalgorithm(
   		}
   		zstate ~ new_state - mean_state;
   		t_estimator.predict(zstate);
-  		val (q_next, q_prob, _, _) = t_estimator.getOutputs4; 
+  		val (q_next, _) = t_estimator.getOutputs2; 
   		val probs = (maxi(q_next) == q_next);
   		probs ~ probs / sum(probs);
   	  if (! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend
@@ -256,9 +257,8 @@ class NDQNalgorithm(
   			new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar));
   			zstate ~ new_state - mean_state;
   			q_estimator.gradient(zstate, action_memory(i,?), reward_memory(i,?), npar);
-  			val (_, _, ev, lv) = q_estimator.getOutputs4;
-  			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss
-  			block_entropy += sum(ev).v; 
+  			val (_, lv) = q_estimator.getOutputs2;
+  			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss 
   		}
   		times(6) = toc;
 
@@ -269,8 +269,8 @@ class NDQNalgorithm(
   		val t = toc;
   		if ((istep+xdqn) % printsteps0 < ndqn_max && istep % printsteps0 >= ndqn_max) {
   			total_reward += block_reward;
-  			myLogger.info("Iter %5d, Time %4.1f, Loss %7.6f, Entropy %5.4f, Epoch %d, Rew/Ep %5.4f, Cum Rew/Ep %5.4f" 
-  					format((istep+xdqn)/printsteps0*printsteps0, t, block_loss/printsteps0/npar, block_entropy/printsteps0/npar, 
+  			myLogger.info("Iter %5d, Time %4.1f, Loss %7.6f, Ent %5.4f, Epoch %d, Rew/Ep %5.4f, Cum Rew/Ep %5.4f" 
+  					format((istep+xdqn)/printsteps0*printsteps0, t, block_loss/printsteps0/npar, block_entropy/printsteps0, 
   							total_epochs, block_reward/math.max(1,total_epochs-last_epochs), total_reward/math.max(1,total_epochs)));
   			reward_plot((istep+xdqn)/printsteps0-1) = block_reward/math.max(1,total_epochs-last_epochs);
   			last_epochs = total_epochs;
@@ -300,14 +300,12 @@ object NDQNalgorithm {
   	var nwindow = 4;                                 // Sensing window = last n images in a state
   	
   	var discount_factor = 0.99f;                     // Reward discount factor
-  	var entropy_weight = 1e-4f;                      // Entropy regularization weight 
   	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
-  	var lambda = 10f;                                  // Spread of per-policy epsilons
+  	var lambda = 10f;                                // Spread ratio of per-policy epsilons
   	
-  	var lr_schedule:FMat = null;    // Learning rate schedule
-  	var eps_schedule:FMat = null;     // Epsilon schedule
-  	var temp_schedule:FMat = null;        // Temperature schedule
+  	var lr_schedule:FMat = null;                     // Learning rate schedule
+  	var eps_schedule:FMat = null;                    // Epsilon schedule
   }
   
   class Options extends Opts {}
