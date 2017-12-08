@@ -26,9 +26,9 @@ opts.lambda = 3;                               // Range of epsilon distribution
 opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                         // gradient clipping
-
-opts.lr_schedule = linterp(0f \ 3e-5f on
-			   1f \ 3e-5f, opts.nsteps); 
+{
+opts.lr_schedule = linterp(0f \ 1e-5f on
+			   1f \ 1e-5f, opts.nsteps); 
 
 opts.eps_schedule = loginterp(0f \ 0.3f on 
 			      0.9f \ 0.1f on
@@ -37,6 +37,8 @@ opts.eps_schedule = loginterp(0f \ 0.3f on
 opts.temp_schedule = linterp(0f \ 0.001f on 
 			     1f \ 0.001f, opts.nsteps);
 
+null
+}
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;
