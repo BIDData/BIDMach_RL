@@ -155,7 +155,6 @@ class NDQNalgorithm(
   	istep = ndqn_max;
   	for (i <- 0 until npar) old_lives(i) = envs(i).lives();
   	val epsilonvec0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
-  	var nupdates = 0;
   	
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
@@ -200,12 +199,11 @@ class NDQNalgorithm(
   			saved_lives(0,igame) = envs(0).lives();
   			igame = (igame+1) % save_length;
   			
-  			nupdates += 1;
   			val action_probs = probs(actions + irow(0->probs.ncols)*probs.nrows);
   			if (opts.nexact > 0) {
   				total_epochs += sum(dones(0->opts.nexact)).v.toInt;
   				block_reward += sum(rewards(0->opts.nexact)).v;
-  				block_entropy -= sum(ln(action_probs(0->opts.nexact))).v/opts.nexact;
+  				block_entropy -= sum(ln(action_probs(opts.nexact->npar))).v/(npar-opts.nexact);
   			} else {
   				total_epochs += sum(dones).v.toInt;
   				block_reward += sum(rewards).v;
