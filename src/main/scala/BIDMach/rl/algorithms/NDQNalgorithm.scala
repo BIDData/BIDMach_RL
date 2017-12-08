@@ -160,8 +160,8 @@ class NDQNalgorithm(
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = opts.lr_schedule(istep);                                          // Update the decayed learning rate
-  		val temp = opts.temp_schedule(istep);                                          // Current temperature 
-  		val epsilon = opts.eps_schedule(istep);                                           // Get an epsilon for the eps-greedy policy
+  		val temp = opts.temp_schedule(istep);                                      // Current temperature 
+  		val epsilon = opts.eps_schedule(istep);                                    // Get an epsilon for the eps-greedy policy
   		val epsilonvec = epsilonvec0 * epsilon;
   		
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
