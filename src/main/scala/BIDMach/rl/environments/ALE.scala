@@ -544,6 +544,7 @@ object ALE {
 			}
 			val new_lives = envs(i).lives();
 			if (envs(i).fire_to_start && (dones(i) == 1f || new_lives < old_lives)) {
+			  rewards(i) += envs(i).act(0);
 				rewards(i) += envs(i).act(1);
 			}
 		})
@@ -575,6 +576,7 @@ object ALE {
 			}
 			val new_lives = envs(i).lives();
 			if (envs(i).fire_to_start && (dones(i) == 1f || new_lives < old_lives)) {
+			  rewards(i) += envs(i).act(0);
 				rewards(i) += envs(i).act(1);
 			}
 			nlives(i) = new_lives;
@@ -609,6 +611,7 @@ object ALE {
 			}
 			val new_lives = envs(i).lives();
 			if (envs(i).fire_to_start && (dones(i) == 1f || new_lives < old_lives)) {
+			  rewards(i) += envs(i).act(0);
 				rewards(i) += envs(i).act(1);
 			}
 		})

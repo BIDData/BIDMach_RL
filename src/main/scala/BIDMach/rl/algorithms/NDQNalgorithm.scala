@@ -175,7 +175,7 @@ class NDQNalgorithm(
   			times(0) = toc;
   			zstate ~ state - mean_state;
   			q_estimator.predict(zstate);                                           // get the next action probabilities etc from the policy
-  			val (preds, aprobs, _, _) = q_estimator.getOutputs4;
+  			val (preds, _) = q_estimator.getOutputs2;
   			times(1) = toc;
 
   			val probs = (maxi(preds) == preds);
