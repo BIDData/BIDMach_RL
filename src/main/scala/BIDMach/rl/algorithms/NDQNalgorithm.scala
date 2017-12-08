@@ -105,9 +105,6 @@ class NDQNalgorithm(
   def train {
     val nsteps = opts.nsteps;
     val nwindow = opts.nwindow;
-    val learning_rates = opts.lr_schedule(nsteps+1);
-    val temperatures = opts.temp_schedule(nsteps+1);
-    val epsilons = opts.eps_schedule(nsteps+1);
     val ndqn = opts.ndqn;
     val old_lives = zeros(1, npar);
     val new_lives  = zeros(1, npar);
@@ -162,9 +159,9 @@ class NDQNalgorithm(
   	myLogger.info("Started Training");
   	while (istep <= opts.nsteps && !done) {
 //    if (render): envs[0].render()
-  		val lr = learning_rates(istep);                                          // Update the decayed learning rate
-  		val temp = temperatures(istep);                                          // Current temperature 
-  		val epsilon = epsilons(istep);                                           // Get an epsilon for the eps-greedy policy
+  		val lr = opts.lr_schedule(istep);                                          // Update the decayed learning rate
+  		val temp = opts.temp_schedule(istep);                                          // Current temperature 
+  		val epsilon = opts.eps_schedule(istep);                                           // Get an epsilon for the eps-greedy policy
   		val epsilonvec = epsilonvec0 * epsilon;
   		
   		q_estimator.setConsts2(1/temp, opts.entropy_weight);
@@ -308,9 +305,9 @@ object NDQNalgorithm {
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
   	var lambda = 10f;                                  // Spread of per-policy epsilons
   	
-  	var lr_schedule = linterp(0f \ 3e-6f on 1f \ 3e-6f, _:Int);    // Learning rate schedule
-  	var eps_schedule = linterp(0f \ 0.3f on 1f \ 0.1f, _:Int);     // Epsilon schedule
-  	var temp_schedule = linterp(0f \ 1f on 1f \ 1f, _:Int);        // Temperature schedule
+  	var lr_schedule:FMat = null;    // Learning rate schedule
+  	var eps_schedule:FMat = null;     // Epsilon schedule
+  	var temp_schedule:FMat = null;        // Temperature schedule
   }
   
   class Options extends Opts {}
