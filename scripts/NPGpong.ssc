@@ -20,19 +20,19 @@ opts.init_moves = 4000;                        // Upper bound on random number o
 
 opts.entropy_weight = 1e-5f;                   // Entropy regularization weight
 
-opts.lr_schedule = (0f \ 3e-6f on
-                    0.8f \ 3e-6f on
-                    0.9f \ 3e-7f on
-                    0.9f \ 1e-10f on
-                    1f \ 1e-10f); 
+opts.lr_schedule = linterp(0f \ 3e-6f on
+                           0.8f \ 3e-6f on
+                           0.9f \ 3e-7f on
+                           0.9f \ 1e-10f on
+                           1f \ 1e-10f, opts.nsteps); 
 
-opts.eps_schedule = (0f \ 1e-6f on 
-                     1f \ 1e-6f)
+opts.eps_schedule = loginterp(0f \ 1e-6f on 
+                              1f \ 1e-6f, opts.nsteps);
 
-opts.temp_schedule = (0f \ 0.2f on 
-                      0.9f \ 0.01f on
-                      0.9f \ 0.0001f on
-                      1f \ 0.0001f);
+opts.temp_schedule = linterp(0f \ 0.2f on 
+                             0.9f \ 0.01f on
+                             0.9f \ 0.0001f on
+                             1f \ 0.0001f, opts.nsteps);
 
 opts.baseline_decay = 0.9999f;                 // Baseline reward decay
 opts.gsq_decay = 0.99f;                        // Decay factor for MSProp

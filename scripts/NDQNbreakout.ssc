@@ -25,14 +25,14 @@ opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                         // gradient clipping
 
 opts.lr_schedule = linterp(0f \ 3e-5f on
-			   1f \ 3e-5f, _:Int); 
+                           1f \ 3e-5f, opts.nsteps); 
 
 opts.eps_schedule = linterp(0f \ 0.3f on 
-			    0.9f \ 0.0001f on
-			    1f \ 0.0001f, _:Int);
+                            0.9f \ 0.0001f on
+                            1f \ 0.0001f, opts.nsteps);
 
 opts.temp_schedule = linterp(0f \ 0.001f on 
-			     1f \ 0.001f, _:Int);
+                             1f \ 0.001f, opts.nsteps);
 
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators

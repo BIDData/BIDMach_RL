@@ -25,10 +25,10 @@ opts.hasBias = true;
 
 
 opts.lr_schedule = linterp(0f \ 3e-5f on
-			   1f \ 3e-5f, _:Int); 
+                           1f \ 3e-5f, opts.nsteps); 
 
 opts.temp_schedule = linterp(0f \ 0.001f on 
-			     1f \ 0.001f, _:Int);
+                             1f \ 0.001f, opts.nsteps);
 
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;
