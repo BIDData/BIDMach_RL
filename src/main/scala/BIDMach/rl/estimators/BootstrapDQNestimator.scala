@@ -97,12 +97,26 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   	for (i <- 0 to nlayers0) net.layers(i).forward;
   }
   
-  // Return the loss and Q-values for a random tail
-  override def getOutputs2:(FMat,FMat) = {
+  // Return the loss and Q-values for a random tail, or an average of tails
+  override def getOutputs3:(FMat,FMat,FMat) = {
     val q_next_stack = FMat(predsLayer.output);
-    val ir = rn.nextInt(opts.ntails) * opts.nactions;           // Select a random tail
-  	val q_next = q_next_stack(ir->(ir+opts.nactions), ?);       // Return its q-values
-    (q_next, FMat(lossLayer.output));
+    val q_next = if (opts.doavg) {
+      val q_next0 = q_next_stack(0->opts.nactions, ?);
+      for (i <- 1 until opts.ntails) {
+        val ir = i * opts.nactions;
+        q_next0 ~ q_next0 + q_next_stack(ir->(ir+opts.nactions), ?);
+      }
+      q_next0;
+    } else {
+    	val ir = rn.nextInt(opts.ntails) * opts.nactions;           // Select a random tail
+    	q_next_stack(ir->(ir+opts.nactions), ?);       // Return its q-values
+    }
+    (q_next, FMat(lossLayer.output), q_next_stack);
+  }
+  
+  override def getOutputs2:(FMat,FMat) = {
+    val (a, b, c) = getOutputs3;
+    (a, b);
   }
   
   // Compute gradient by applying a poisson random bootstrap weight
@@ -116,6 +130,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 object BootstrapDQNestimator {
   trait Opts extends DQNestimator.Opts {
     var ntails = 8;
+    var doavg = false;
   }
   
   class Options extends Opts {}
