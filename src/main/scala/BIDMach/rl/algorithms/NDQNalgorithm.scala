@@ -41,7 +41,6 @@ class NDQNalgorithm(
 	val rn = new java.util.Random;
 	var ndqn_max:Int = 0;
 	var xhist:FMat = null;
-	var bootsample:FMat = null;
 	
 	var q_estimator:Estimator = null;
 	var t_estimator:Estimator = null;
@@ -137,7 +136,6 @@ class NDQNalgorithm(
   	  case bse:BootstrapDQNestimator => bse.opts.ntails;
   	  case _ => 0;
   	}
-  	bootsample = zeros(ntails, npar);
   	q_estimator.predict(state);    //	Initialize them by making predictions
   	t_estimator.predict(state);
 
@@ -180,10 +178,9 @@ class NDQNalgorithm(
   			times(0) = toc;
   			zstate ~ state - mean_state;
   			q_estimator.predict(zstate);                                           // get the next action probabilities etc from the policy
-  			val (q_next0, _) = q_estimator.getOutputs2;
+  			val (q_next, _) = q_estimator.getOutputs2;
   			times(1) = toc;
-
-  			val q_next = selectTail(q_next0, ntails); 
+ 
   			val probs = (maxi(q_next) == q_next);
   			probs ~ probs / sum(probs);
   			if (i == xdqn-1 || ! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend in environment 0
@@ -242,8 +239,7 @@ class NDQNalgorithm(
   		}
   		zstate ~ new_state - mean_state;
   		t_estimator.predict(zstate);
-  		val (q_next0, _) = t_estimator.getOutputs2; 
-  		val q_next = selectTail(q_next0, ntails);
+  		val (q_next, _) = t_estimator.getOutputs2; 
   		val probs = (maxi(q_next) == q_next);
   		probs ~ probs / sum(probs);
   	  if (! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend
@@ -262,12 +258,7 @@ class NDQNalgorithm(
   		for (i <- 0 until xdqn) {
   			new_state <-- state_memory(?,?,?,(i*npar)->((i+1)*npar));
   			zstate ~ new_state - mean_state;
-  			if (ntails == 0) {
-  				q_estimator.gradient(zstate, action_memory(i,?), reward_memory(i,?), npar);
-  			} else {
-  			  bootsample <-- poissrnd(ones(ntails, npar));
-  				q_estimator.gradient4(zstate, action_memory(i,?), reward_memory(i,?), bootsample, npar);			  
-  			}
+  			q_estimator.gradient(zstate, action_memory(i,?), reward_memory(i,?), npar);
   			val (_, lv) = q_estimator.getOutputs2;
   			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss 
   		}
@@ -293,15 +284,6 @@ class NDQNalgorithm(
   	}
   	Mat.useGPUcache = GPUcacheState;
   	Mat.useCache = cacheState;
-  }
-  
-  def selectTail(preds:FMat, ntails:Int):FMat = {
-  	if (ntails == 0) {
-  		preds;
-  	} else {
-  		val ir = rn.nextInt(ntails) * nactions;
-  		preds(ir->(ir+nactions), ?);
-  	}
   }
 }
 
