@@ -106,7 +106,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
         val ir = i * opts.nactions;
         q_next0 ~ q_next0 + q_next_stack(ir->(ir+opts.nactions), ?);
       }
-      q_next0;
+      q_next0/opts.ntails;
     } else {
     	val ir = rn.nextInt(opts.ntails) * opts.nactions;           // Select a random tail
     	q_next_stack(ir->(ir+opts.nactions), ?);       // Return its q-values
