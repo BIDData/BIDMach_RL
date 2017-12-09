@@ -55,7 +55,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	net.assignTargets(net.gmats, 0, 0);
     }
     
-    def checkinit(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat):Unit = {
+    def checkinit(states:FMat, actions:IMat, rewards:FMat, other:FMat):Unit = {
     	if (net.mats.asInstanceOf[AnyRef] == null) {
     		net.mats = new Array[Mat](4);
     		net.gmats = new Array[Mat](4);
@@ -72,8 +72,11 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	if (rewards.asInstanceOf[AnyRef] != null) {
     		net.mats(2) <-- rewards;
     	}
-    	if (rewards2.asInstanceOf[AnyRef] != null) {
-    		net.mats(3) <-- rewards2;
+    	if (other.asInstanceOf[AnyRef] != null) {
+    	  if (other.nrows != net.mats(3).nrows) {
+    	    net.mats(3) = other.copy;
+    	  }
+    		net.mats(3) <-- other;
     	}
     	if (!initialized) {
     		net.useGPU = (opts.useGPU && Mat.hasCUDA > 0);
