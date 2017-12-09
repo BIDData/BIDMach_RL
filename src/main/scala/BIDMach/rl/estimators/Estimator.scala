@@ -24,8 +24,6 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     
     val updater = new ADAGrad(opts);
     
-    val ninputs = 3;
-    
 /** Perform the initialization that is normally done by the Learner */
 
     var initialized = false;
@@ -93,11 +91,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
      returns action predictions */
     def predict(states:FMat, nlayers:Int = 0) = {
     	val fstates = formatStates(states);
-    	if (ninputs == 3) {
-    		checkinit(fstates, null, null);
-    	} else {
-    		checkinit(fstates, null, null, null); 
-    	}    	
+    	checkinit(fstates, null, null); 	
     	val nlayers0 = if (nlayers > 0) nlayers else (net.layers.length-1);
     	for (i <- 0 to nlayers0) net.layers(i).forward;
     }

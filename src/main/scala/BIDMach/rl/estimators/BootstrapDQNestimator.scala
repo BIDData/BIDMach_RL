@@ -17,6 +17,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   var predsLayer:Layer = null;
   var lossLayer:Layer = null;
   var bootsample:FMat = null;
+  var bootones:FMat = null;
   val rn = new java.util.Random;
   
   override def formatStates(s:FMat) = {
@@ -88,6 +89,14 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 
   override val net = createNet;
   
+  override def predict(states:FMat, nlayers:Int = 0) = {
+  	val fstates = formatStates(states);
+  	if (bootones.asInstanceOf[AnyRef] == null) bootones = ones(1, states.ncols);
+  	checkinit(fstates, null, null, bootones); 	
+  	val nlayers0 = if (nlayers > 0) nlayers else (net.layers.length-1);
+  	for (i <- 0 to nlayers0) net.layers(i).forward;
+  }
+  
   // Return the loss and Q-values for a random tail
   override def getOutputs2:(FMat,FMat) = {
     val q_next_stack = FMat(predsLayer.output);
@@ -100,7 +109,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   override def gradient(states:FMat, actions:IMat, rewards:FMat):Unit = {
     val npar = states.ncols;
     if (bootsample.asInstanceOf[AnyRef] == null) {
-      bootsample = poissrnd(ones(opts.ntails, npar));
+      bootsample = FMat(poissrnd(ones(opts.ntails, npar)));
     } else {
     	bootsample <-- poissrnd(ones(opts.ntails, npar));
     }
