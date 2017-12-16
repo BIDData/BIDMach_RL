@@ -15,7 +15,7 @@ opts.gsq_decay = 0.99f;                 // Squared gradient memory decay factor 
 opts.nsteps = 5000000;                  // Number of steps to run (game actions per environment)
 opts.ndqn = 4;                          // Number of DQN steps per update
 opts.target_window = 50;                // Interval to update target estimator from q-estimator
-opts.print_steps = 20000;               // Number of steps between printouts
+opts.print_steps = 10000;               // Number of steps between printouts
 opts.nwindow = 4;                       // Sensing window = last n images in a state
 opts.init_moves = 4000;                 // Upper bound on random number of moves to take initially
 opts.nexact = 2;                        // Run exact policy (without epsilon-noise) in this many threads for scoring
@@ -39,6 +39,7 @@ null
 opts.nhidden = 16;                      // Number of hidden layers for estimators
 opts.nhidden2 = 32;
 opts.nhidden3 = 256;
+opts.ntails = 16;
 
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;

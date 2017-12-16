@@ -132,9 +132,9 @@ class NDQNalgorithm(
 // Create estimators
   	q_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
   	t_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
-  	val ntails = q_estimator match {
-  	  case bse:BootstrapDQNestimator => bse.opts.ntails;
-  	  case _ => 0;
+  	t_estimator match {
+  	  case x:BootstrapDQNestimator => x.opts.doavg = true;
+  	  case _ => {}
   	}
   	q_estimator.predict(state);    //	Initialize them by making predictions
   	t_estimator.predict(state);
@@ -234,7 +234,6 @@ class NDQNalgorithm(
   			state <-- new_state;
   			times(4) = toc;
   			dtimes(0,0->4) = dtimes(0,0->4) + (times(0,1->5) - times(0,0->4));
-  			while (paused || (pauseAt > 0 && istep + i >= pauseAt)) Thread.sleep(1000);
   			i += 1;
   		}
   		zstate ~ new_state - mean_state;
@@ -263,6 +262,7 @@ class NDQNalgorithm(
   			block_loss += sum(lv).v;                                // compute q-estimator gradient and return the loss 
   		}
   		times(6) = toc;
+  		while (paused || (pauseAt > 0 && istep + i >= pauseAt)) Thread.sleep(1000);
 
   		q_estimator.msprop(lr);                       // apply the gradient update
   		times(7) = toc;

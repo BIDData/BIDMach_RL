@@ -34,9 +34,11 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     		net.gmats = new Array[Mat](3);
     	}
     	net.mats(0) = states;
+    	val actionrows = if (actions.asInstanceOf[AnyRef] != null) actions.nrows else 1;
+    	val rewardrows = if (rewards.asInstanceOf[AnyRef] != null) rewards.nrows else 1;
     	if (net.mats(1).asInstanceOf[AnyRef] == null) {
-    		net.mats(1) = izeros(1, states.ncols);              // Dummy action vector
-    		net.mats(2) = zeros(1, states.ncols);               // Dummy reward vector
+    		net.mats(1) = izeros(actionrows, states.ncols);              // Dummy action vector
+    		net.mats(2) = zeros(rewardrows, states.ncols);               // Dummy reward vector
     	}
     	if (actions.asInstanceOf[AnyRef] != null) {
     		net.mats(1) <-- actions;
@@ -61,10 +63,14 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     		net.gmats = new Array[Mat](4);
     	}
     	net.mats(0) = states;
+    	val actionrows = if (actions.asInstanceOf[AnyRef] != null) actions.nrows else 1;
+    	val rewardrows = if (rewards.asInstanceOf[AnyRef] != null) rewards.nrows else 1;
+    	val otherrows = if (other.asInstanceOf[AnyRef] != null) other.nrows else 1;
+ 
     	if (net.mats(1).asInstanceOf[AnyRef] == null) {
-    		net.mats(1) = izeros(1, states.ncols);              // Dummy action vector
-    		net.mats(2) = zeros(1, states.ncols);               // Dummy reward vector
-    		net.mats(3) = zeros(1, states.ncols);
+    		net.mats(1) = izeros(actionrows, states.ncols);              // Dummy action vector
+    		net.mats(2) = zeros(rewardrows, states.ncols);               // Dummy reward vector
+    		net.mats(3) = zeros(otherrows, states.ncols);
     	}
     	if (actions.asInstanceOf[AnyRef] != null) {
     		net.mats(1) <-- actions;
@@ -73,9 +79,6 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     		net.mats(2) <-- rewards;
     	}
     	if (other.asInstanceOf[AnyRef] != null) {
-    	  if (other.nrows != net.mats(3).nrows) {
-    	    net.mats(3) = other.copy;
-    	  }
     		net.mats(3) <-- other;
     	}
     	if (!initialized) {
@@ -110,7 +113,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     and then backward to compute gradients.
     An action vector and reward vector must be given. */  
 
-    def gradient(states:FMat, actions:IMat, rewards:FMat, ndout:Int=0):Unit = {
+    def gradient(states:FMat, actions:IMat, rewards:FMat, ndout:Int):Unit = {
       val ndout0 = if (ndout == 0) states.ncols else ndout;
     	val fstates = formatStates(states);
     	checkinit(fstates, actions, rewards);
@@ -123,7 +126,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
       gradient(states, actions, rewards, 0);
     }
     
-    def gradient4(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat, ndout:Int=0):Unit = {
+    def gradient4(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat, ndout:Int):Unit = {
       val ndout0 = if (ndout == 0) states.ncols else ndout;
     	val fstates = formatStates(states);
     	checkinit(fstates, actions, rewards, rewards2);
@@ -132,7 +135,7 @@ abstract class Estimator(opts:Algorithm.Options = new Algorithm.Options) extends
     	net.backward(0, 0);
     }
     
-    def gradient(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat):Unit = {
+    def gradient4(states:FMat, actions:IMat, rewards:FMat, rewards2:FMat):Unit = {
       gradient4(states, actions, rewards, rewards2, 0);
     }
 

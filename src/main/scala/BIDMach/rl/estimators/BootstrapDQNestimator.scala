@@ -17,6 +17,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   var predsLayer:Layer = null;
   var lossLayer:Layer = null;
   var bootsample:FMat = null;
+  var rowoffsets:IMat = null;
   val rn = new java.util.Random;
   
   override def formatStates(s:FMat) = {
@@ -41,38 +42,31 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 
 	  // Constants
 	  val minus1 =      const(-1f);
+	  val invntails =   const(1f/opts.ntails);
 
 	  // Convolution layers
-	  val conv1 =       conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias);
+	  val conv1 =       conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias,
+			                         lr_scale=1f/opts.ntails,bias_scale=1f/opts.ntails);
 	  val relu1 =       relu(conv1)(inplace=opts.inplace);
-	  val conv2 =       conv(relu1)(w=4,h=4,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias);
+	  val conv2 =       conv(relu1)(w=4,h=4,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias,
+	                                lr_scale=1f/opts.ntails,bias_scale=1f/opts.ntails);
 	  val relu2 =       relu(conv2)(inplace=opts.inplace);
 
-	  // Construct n tails with q-values and losses
-	  val all_preds =   new Array[NodeTerm](opts.ntails);
-	  val all_losses =  new Array[NodeTerm](opts.ntails);
+	  // FC/reward prediction layers
+	  val fc3 =         linear(relu2)(outdim=opts.nhidden3*opts.ntails,hasBias=opts.hasBias);
+	  val relu3 =       relu(fc3)(inplace=opts.inplace);
+	  val preds =       linear(relu3)(outdim=opts.nactions*opts.ntails,hasBias=opts.hasBias,ngroups=opts.ntails); 
 	  
-	  for (i <- 0 until opts.ntails) {
-	  	// FC/reward prediction layers
-	  	val fc3 =       linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
-	  	val relu3 =     relu(fc3)(inplace=opts.inplace);
-	  	val preds =     linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias); 
-	  	// Action loss layers
-	  	val diff =      target - preds(actions);
-	  	val loss =      diff *@ diff;                     // Base loss layer.
-	  	all_preds(i) =  preds;
-	  	all_losses(i) = loss;
-	  }
-	  // Stack the tails
-	  val preds =       stack(all_preds);
-	  val stackloss =   stack(all_losses);
+	  // Action loss layers
+	  val diff =        preds(actions) - target;
+	  val stackloss =   diff *@ diff;                     // Base loss layer.
 	  
 	  // Apply bootstrap sample weights to the losses
-	  val wloss =       stackloss *@ bootsample;
-	  val loss =        sum(wloss);
+	  val tloss =       sum(stackloss *@ bootsample);
+	  val loss =        tloss *@ invntails;
 	  
 	  // Total weighted negloss, maximize this
-	  val out =         loss *@ minus1 
+	  val out =         tloss *@ minus1 
 
 	  opts.nodeset = Net.getDefaultNodeSet;
 	  
@@ -91,8 +85,9 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   override def predict(states:FMat, nlayers:Int = 0) = {
   	val fstates = formatStates(states);
   	if (bootsample.asInstanceOf[AnyRef] == null) bootsample = zeros(opts.ntails, states.ncols);
+  	if (rowoffsets.asInstanceOf[AnyRef] == null) rowoffsets = (icol(0->opts.ntails)*opts.nactions) * iones(1,states.ncols);
   	bootsample.set(1f/opts.ntails);
-  	checkinit(fstates, null, null, bootsample); 	
+  	checkinit(fstates, izeros(opts.ntails, fstates.ncols), null, bootsample); 	
   	val nlayers0 = if (nlayers > 0) nlayers else (net.layers.length-1);
   	for (i <- 0 to nlayers0) net.layers(i).forward;
   }
@@ -120,10 +115,9 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   }
   
   // Compute gradient by applying a poisson random bootstrap weight
-  override def gradient(states:FMat, actions:IMat, rewards:FMat):Unit = {
-    val npar = states.ncols;
+  override def gradient(states:FMat, actions:IMat, rewards:FMat, npar:Int):Unit = {
     bootsample <-- poissrnd(ones(opts.ntails, npar));
-    gradient4(states, actions, rewards, bootsample, npar);
+    gradient4(states, actions+rowoffsets, rewards, bootsample, npar);
   }
 };
 
