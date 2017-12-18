@@ -15,7 +15,7 @@ opts.gsq_decay = 0.99f;                 // Squared gradient memory decay factor 
 opts.nsteps = 5000000;                  // Number of steps to run (game actions per environment)
 opts.ndqn = 4;                          // Number of DQN steps per update
 opts.target_window = 50;                // Interval to update target estimator from q-estimator
-opts.print_steps = 10000;               // Number of steps between printouts
+opts.print_steps = 50000;               // Number of steps between printouts
 opts.nwindow = 4;                       // Sensing window = last n images in a state
 opts.init_moves = 4000;                 // Upper bound on random number of moves to take initially
 opts.nexact = 2;                        // Run exact policy (without epsilon-noise) in this many threads for scoring
@@ -27,8 +27,8 @@ opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                // gradient clipping
 {
-opts.lr_schedule = linterp(0f \ 1e-5f on
-			   1f \ 1e-5f, opts.nsteps); 
+opts.lr_schedule = linterp(0f \ 3e-5f on
+			   1f \ 3e-5f, opts.nsteps); 
 
 opts.eps_schedule = linterp(0f \ 0.0001f on 
 			    0.9f \ 0.0001f on	

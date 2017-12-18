@@ -71,11 +71,16 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 
   override val net = createNet;
   
-  // Get the Q-predictions and loss for the last forward pass. 
+  // Get the Q-predictions, loss and probs for the last forward pass. 
+  override def getOutputs3:(FMat,FMat,FMat) = {
+    val (q_vals, loss) = getOutputs2;
+    val q_probs = (q_vals == maxi(q_vals));
+    q_probs ~ q_probs / sum(q_probs);
+    (q_vals, loss, q_probs)    
+  }
+  
   override def getOutputs2:(FMat,FMat) = {
-    (FMat(predsLayer.output),
-     FMat(lossLayer.output)
-    		)    
+    (FMat(predsLayer.output), FMat(lossLayer.output));
   }
 };
 

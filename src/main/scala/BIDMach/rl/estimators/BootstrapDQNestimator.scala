@@ -92,26 +92,40 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   	for (i <- 0 to nlayers0) net.layers(i).forward;
   }
   
-  // Return the loss and Q-values for a random tail, or an average of tails
+  // Return the loss and probabilities of actions for 
+  //   doavg = true: average tail q-values and sample the optimum or
+  //   doavg = false: sample a tail and then compute its probabilities
   override def getOutputs3:(FMat,FMat,FMat) = {
-    val q_next_stack = FMat(predsLayer.output);
-    val q_next = if (opts.doavg) {
-      val q_next0 = q_next_stack(0->opts.nactions, ?);
-      for (i <- 1 until opts.ntails) {
-        val ir = i * opts.nactions;
-        q_next0 ~ q_next0 + q_next_stack(ir->(ir+opts.nactions), ?);
-      }
-      q_next0/opts.ntails;
+    val ncols = predsLayer.output.ncols;
+    val q_vals = FMat(predsLayer.output);
+    val q_col_groups = q_vals.reshapeView(opts.nactions, opts.ntails * ncols);
+    val (q_mean, loss) = getOutputs2;
+    val q_probs = if (opts.doavg) {
+    	val q_probs0 = (q_mean == maxi(q_mean));
+      q_probs0 / sum(q_probs0);  
     } else {
-    	val ir = rn.nextInt(opts.ntails) * opts.nactions;           // Select a random tail
-    	q_next_stack(ir->(ir+opts.nactions), ?);       // Return its q-values
-    }
-    (q_next, FMat(lossLayer.output), q_next_stack);
+    	val q_probs_groups = (q_col_groups == maxi(q_col_groups));
+      q_probs_groups ~ q_probs_groups / sum(q_probs_groups); 
+      val q_probs_sum = q_probs_groups.colslice(0, ncols);
+    	for (i <- 1 until opts.ntails) {
+    		q_probs_sum ~ q_probs_sum + q_probs_groups.colslice(i*ncols, (i+1)*ncols);
+    	}
+    	q_probs_sum / opts.ntails;    		
+    } 
+    (q_mean, loss, q_probs);
   }
   
   override def getOutputs2:(FMat,FMat) = {
-    val (a, b, c) = getOutputs3;
-    (a, b);
+		val ncols = predsLayer.output.ncols;
+		val q_vals = FMat(predsLayer.output);
+		val loss = FMat(lossLayer.output);
+    val q_col_groups = q_vals.reshapeView(opts.nactions, opts.ntails * ncols);
+    val q_sum = q_col_groups.colslice(0, ncols);
+    for (i <- 1 until opts.ntails) {
+    	q_sum ~ q_sum + q_col_groups.colslice(i*ncols, (i+1)*ncols);
+    }
+    val q_mean = q_sum/opts.ntails;
+    (q_mean, loss);
   }
   
   // Compute gradient by applying a poisson random bootstrap weight

@@ -132,10 +132,6 @@ class NDQNalgorithm(
 // Create estimators
   	q_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
   	t_estimator = buildEstimator(opts.asInstanceOf[Estimator.Opts]);
-  	t_estimator match {
-  	  case x:BootstrapDQNestimator => x.opts.doavg = true;
-  	  case _ => {}
-  	}
   	q_estimator.predict(state);    //	Initialize them by making predictions
   	t_estimator.predict(state);
 
@@ -161,7 +157,7 @@ class NDQNalgorithm(
   	val epsilonvec0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
   	
   	myLogger.info("Started Training");
-  	while (istep <= opts.nsteps && !done) {
+  	while (istep < opts.nsteps && !done) {
 //    if (render): envs[0].render()
   		val lr = opts.lr_schedule(istep);                                          // Update the decayed learning rate
   		val epsilon = opts.eps_schedule(istep);                                    // Get an epsilon for the eps-greedy policy
@@ -178,11 +174,9 @@ class NDQNalgorithm(
   			times(0) = toc;
   			zstate ~ state - mean_state;
   			q_estimator.predict(zstate);                                           // get the next action probabilities etc from the policy
-  			val (q_next, _) = q_estimator.getOutputs2;
+  			val (q_next, _, probs) = q_estimator.getOutputs3;
   			times(1) = toc;
  
-  			val probs = (maxi(q_next) == q_next);
-  			probs ~ probs / sum(probs);
   			if (i == xdqn-1 || ! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend in environment 0
   			  probs(?,irange) = epsilonvec(0,irange) *@ rand_actions(?,irange) + (1-epsilonvec(0,irange)) *@ probs(?,irange);          
   			}
@@ -238,9 +232,7 @@ class NDQNalgorithm(
   		}
   		zstate ~ new_state - mean_state;
   		t_estimator.predict(zstate);
-  		val (q_next, _) = t_estimator.getOutputs2; 
-  		val probs = (maxi(q_next) == q_next);
-  		probs ~ probs / sum(probs);
+  		val (q_next, _, probs) = t_estimator.getOutputs3; 
   	  if (! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend
   				probs(?,irange) = epsilonvec(0,irange) *@ rand_actions(?,irange) + (1-epsilonvec(0,irange)) *@ probs(?,irange);          
   	  }
