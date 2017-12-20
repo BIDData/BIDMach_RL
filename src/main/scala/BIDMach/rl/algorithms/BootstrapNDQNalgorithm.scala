@@ -22,8 +22,6 @@ class BootstrapNDQNalgorithm(
 		) extends Algorithm(opts) {
 
 	val npar = envs.length;                            // Number of parallel environments 
-
-	var VALID_ACTIONS:IMat = null;
 	var nactions = 0;
 	var total_steps = 0;
 	var block_reward = 0f;
@@ -34,12 +32,13 @@ class BootstrapNDQNalgorithm(
 	var total_epochs = 0;
 	var total_time = 0f;
 	var igame = 0;
+	var ndqn_max:Int = 0;
+	var VALID_ACTIONS:IMat = null;
 	var state:FMat = null;
 	var zstate:FMat = null;
 	var mean_state:FMat = null;
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
-	var ndqn_max:Int = 0;
 	var xhist:FMat = null;
 
 	var q_estimator:Estimator = null;
@@ -161,14 +160,14 @@ class BootstrapNDQNalgorithm(
 		for (i <- 0 until npar) {
 		  old_lives(i) = envs(i).lives();
 		}
-		val epsilonvec0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));                // per-thread epsilons
-		val itails = min(int(rand(1,npar) * ntails), ntails-1);                            // Each thread picks a random tail
+		val epsilonvec0 = exp(- ln(opts.lambda) * (1 - row(0->npar)/npar));        // per-thread epsilons
+		val itails = min(int(rand(1,npar) * ntails), ntails-1);                    // Each thread picks a random tail
 
 		myLogger.info("Started Training");
-		while (istep < opts.nsteps && !done) {
+		while (istep <= opts.nsteps && !done) {
 			//    if (render): envs[0].render()
-			val lr = opts.lr_schedule(istep);                                        // Update the decayed learning rate
-			val epsilon = opts.eps_schedule(istep);                                  // Get an epsilon for the eps-greedy policy
+			val lr = opts.lr_schedule(istep-1);                                        // Update the decayed learning rate
+			val epsilon = opts.eps_schedule(istep-1);                                  // Get an epsilon for the eps-greedy policy
 			val epsilonvec = epsilonvec0 * epsilon;
 
 			var i = 0;
