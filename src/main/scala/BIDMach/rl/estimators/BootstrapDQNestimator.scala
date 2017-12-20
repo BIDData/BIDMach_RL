@@ -85,7 +85,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   	val fstates = formatStates(states);
   	if (bootsample.asInstanceOf[AnyRef] == null) bootsample = zeros(opts.ntails, states.ncols);
   	bootsample.set(1f/opts.ntails);
-  	checkinit(fstates, izeros(opts.ntails, fstates.ncols), null, bootsample); 	
+  	checkinit(fstates, izeros(opts.ntails, fstates.ncols), zeros(opts.ntails, fstates.ncols), bootsample); 	
   	val nlayers0 = if (nlayers > 0) nlayers else (net.layers.length-1);
   	for (i <- 0 to nlayers0) net.layers(i).forward;
   }
