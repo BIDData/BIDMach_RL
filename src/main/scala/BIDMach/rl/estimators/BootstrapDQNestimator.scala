@@ -17,7 +17,6 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   var predsLayer:Layer = null;
   var lossLayer:Layer = null;
   var bootsample:FMat = null;
-  var rowoffsets:IMat = null;
   val rn = new java.util.Random;
   
   override def formatStates(s:FMat) = {
@@ -85,7 +84,6 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   override def predict(states:FMat, nlayers:Int = 0) = {
   	val fstates = formatStates(states);
   	if (bootsample.asInstanceOf[AnyRef] == null) bootsample = zeros(opts.ntails, states.ncols);
-  	if (rowoffsets.asInstanceOf[AnyRef] == null) rowoffsets = (icol(0->opts.ntails)*opts.nactions) * iones(1,states.ncols);
   	bootsample.set(1f/opts.ntails);
   	checkinit(fstates, izeros(opts.ntails, fstates.ncols), null, bootsample); 	
   	val nlayers0 = if (nlayers > 0) nlayers else (net.layers.length-1);
@@ -101,7 +99,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   // Compute gradient by applying a poisson random bootstrap weight
   override def gradient(states:FMat, actions:IMat, rewards:FMat, npar:Int):Unit = {
     bootsample <-- poissrnd(ones(opts.ntails, npar));
-    gradient4(states, actions+rowoffsets, rewards, bootsample, npar);
+    gradient4(states, actions, rewards, bootsample, npar);
   }
 };
 
