@@ -274,8 +274,7 @@ object DDQNalgorithm {
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
   	var nwindow = 4;                                 // Sensing window = last n images in a state
-  	var target_window = 50;                          // Interval to update target estimator from q-estimator. If 0, run Double QL instead. 
-  	
+  	var target_window = 50;                          // Interval to update target estimator from q-estimator. If 0, run Double QL instead.   	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)

@@ -39,6 +39,7 @@ class NDQNalgorithm(
 	var mean_state:FMat = null;
 	var obs0:FMat = null;
 	val rn = new java.util.Random;
+	var actionColOffsets:IMat = null;
 	var ndqn_max:Int = 0;
 	var xhist:FMat = null;
 	
@@ -70,6 +71,7 @@ class NDQNalgorithm(
 	  saved_preds = zeros(nactions, save_length);
 	  ndqn_max = if (opts.ndqn_max == 0) opts.ndqn * 4 else opts.ndqn_max;
 	  xhist = zeros(1, ndqn_max);
+	  actionColOffsets = irow(0->npar) * nactions;
 	  
 	  print("Initializing Environments")
 	  for (i <- 0 until npar) {
@@ -231,12 +233,16 @@ class NDQNalgorithm(
   			i += 1;
   		}
   		zstate ~ new_state - mean_state;
-  		t_estimator.predict(zstate);
-  		val (q_next, _, probs) = t_estimator.getOutputs3; 
-  	  if (! opts.q_exact_policy) {                            // if score_exact dont epsilon-blend
-  				probs(?,irange) = epsilonvec(0,irange) *@ rand_actions(?,irange) + (1-epsilonvec(0,irange)) *@ probs(?,irange);          
-  	  }
-  		val v_next = q_next dot probs;
+  		q_estimator.predict(zstate);
+  		val (q_next, _) = q_estimator.getOutputs2; 
+  		val v_next = if (opts.doDDQN) {
+  		  val (_, best_actions) = maxi2(q_next);
+  		  t_estimator.predict(zstate);
+  		  val (q_next1, _) = t_estimator.getOutputs2;
+  		  q_next1(best_actions + actionColOffsets);
+  		} else {
+  		  maxi(q_next);
+  		}
   		times(5) = toc;
 
   		reward_memory(xdqn-1,?) = reward_memory(xdqn-1,?) + (1f-done_memory(xdqn-1,?)) *@ opts.discount_factor *@ v_next ; // Propagate rewards from Q-values at non-final states.
@@ -291,12 +297,12 @@ object NDQNalgorithm {
   	var target_window = 50;                          // Interval to update target estimator from q-estimator
   	var print_steps = 10000;                         // Number of steps between printouts
   	var init_moves = 4000;                           // Upper bound on random number of moves to take initially
-  	var nwindow = 4;                                 // Sensing window = last n images in a state
-  	
+  	var nwindow = 4;                                 // Sensing window = last n images in a state 	
   	var discount_factor = 0.99f;                     // Reward discount factor
   	var q_exact_policy = false;                      // Compute Q values for the true policy vs. exploration policy (like DeepMind)
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
   	var lambda = 10f;                                // Spread ratio of per-policy epsilons
+  	var doDDQN = false;
   	
   	var lr_schedule:FMat = null;                     // Learning rate schedule
   	var eps_schedule:FMat = null;                    // Epsilon schedule
