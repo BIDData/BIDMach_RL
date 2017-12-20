@@ -92,40 +92,10 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   	for (i <- 0 to nlayers0) net.layers(i).forward;
   }
   
-  // Return the loss and probabilities of actions for 
-  //   doavg = true: average tail q-values and sample the optimum or
-  //   doavg = false: sample a tail and then compute its probabilities
-  override def getOutputs3:(FMat,FMat,FMat) = {
-    val ncols = predsLayer.output.ncols;
-    val q_vals = FMat(predsLayer.output);
-    val q_col_groups = q_vals.reshapeView(opts.nactions, opts.ntails * ncols);
-    val (q_mean, loss) = getOutputs2;
-    val q_probs = if (opts.doavg) {
-    	val q_probs0 = (q_mean == maxi(q_mean));
-      q_probs0 / sum(q_probs0);  
-    } else {
-    	val q_probs_groups = (q_col_groups == maxi(q_col_groups));
-      q_probs_groups ~ q_probs_groups / sum(q_probs_groups); 
-      val q_probs_sum = q_probs_groups.colslice(0, ncols);
-    	for (i <- 1 until opts.ntails) {
-    		q_probs_sum ~ q_probs_sum + q_probs_groups.colslice(i*ncols, (i+1)*ncols);
-    	}
-    	q_probs_sum / opts.ntails;    		
-    } 
-    (q_mean, loss, q_probs);
-  }
-  
   override def getOutputs2:(FMat,FMat) = {
-		val ncols = predsLayer.output.ncols;
 		val q_vals = FMat(predsLayer.output);
 		val loss = FMat(lossLayer.output);
-    val q_col_groups = q_vals.reshapeView(opts.nactions, opts.ntails * ncols);
-    val q_sum = q_col_groups.colslice(0, ncols);
-    for (i <- 1 until opts.ntails) {
-    	q_sum ~ q_sum + q_col_groups.colslice(i*ncols, (i+1)*ncols);
-    }
-    val q_mean = q_sum/opts.ntails;
-    (q_mean, loss);
+    (q_vals, loss);
   }
   
   // Compute gradient by applying a poisson random bootstrap weight
