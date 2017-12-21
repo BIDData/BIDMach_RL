@@ -32,8 +32,8 @@ opts.tensorFormat = Net.TensorNCHW;
 opts.lr_schedule = linterp(0f \ 3e-6f on
 			   1f \ 3e-6f, opts.nsteps); 
 
-opts.eps_schedule = linterp(0f \ 0.001f on 
-			    0.9f \ 0.001f on	
+opts.eps_schedule = linterp(0f \ 0.01f on 
+			    0.9f \ 0.01f on	
 			    1f \ 0.0001f, opts.nsteps);
 null
 }
