@@ -5,7 +5,7 @@ val rom_dir = "../roms/";
 
 val npar = 16;                          // Number of parallel environments
 
-class ModelOpts extends NDQNalgorithm.Options with BootstrapDQNestimator.Opts;
+class ModelOpts extends BootstrapNDQNalgorithm.Options with BootstrapDQNestimator.Opts;
 
 val opts = new ModelOpts;               // Model options
 opts.discount_factor = 0.99f;           // Reward discount factor
@@ -15,23 +15,25 @@ opts.gsq_decay = 0.99f;                 // Squared gradient memory decay factor 
 opts.nsteps = 5000000;                  // Number of steps to run (game actions per environment)
 opts.ndqn = 4;                          // Number of DQN steps per update
 opts.target_window = 50;                // Interval to update target estimator from q-estimator
-opts.print_steps = 50000;               // Number of steps between printouts
+opts.print_steps = 20000;               // Number of steps between printouts
 opts.nwindow = 4;                       // Sensing window = last n images in a state
 opts.init_moves = 4000;                 // Upper bound on random number of moves to take initially
 opts.nexact = 2;                        // Run exact policy (without epsilon-noise) in this many threads for scoring
 opts.q_exact_policy = true;             // Q-functions estimate exact policy values, not exploration policy value
-opts.lambda = 3;                        // Range of epsilon distribution
-opts.doavg = false
+opts.lambda = 1;                        // Range of epsilon distribution
+opts.vexp = 0.5f
+opts.doDDQN = true;
+opts.thompson = false;
 
 opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                // gradient clipping
 {
-opts.lr_schedule = linterp(0f \ 3e-5f on
-			   1f \ 3e-5f, opts.nsteps); 
+opts.lr_schedule = linterp(0f \ 3e-6f on
+			   1f \ 3e-6f, opts.nsteps); 
 
-opts.eps_schedule = linterp(0f \ 0.0001f on 
-			    0.9f \ 0.0001f on	
+opts.eps_schedule = linterp(0f \ 0.001f on 
+			    0.9f \ 0.001f on	
 			    1f \ 0.0001f, opts.nsteps);
 null
 }
@@ -56,7 +58,7 @@ for (i <- 0 until npar) {
     envs(i) = new AtariEnvironment(envopts);
 };
 
-val model = new NDQNalgorithm(envs, AtariEnvironment.stepAll, BootstrapDQNestimator.build, opts);
+val model = new BootstrapNDQNalgorithm(envs, AtariEnvironment.stepAll, BootstrapDQNestimator.build, opts);
 
 model.startup;
 

@@ -32,6 +32,9 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
   def createNet = {
 	  import BIDMach.networks.layers.Node._;
 	  Net.initDefaultNodeSet;
+//	  val scaleHead = 1f/math.sqrt(opts.ntails).toFloat;
+	  val scaleHead = 1f/opts.ntails;
+	  
 
 	  // Input layers 
 	  val in =          input();
@@ -45,10 +48,10 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 
 	  // Convolution layers
 	  val conv1 =       conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias,
-			                         lr_scale=1f/opts.ntails,bias_scale=1f/opts.ntails);
+			                         lr_scale=scaleHead,bias_scale=scaleHead);
 	  val relu1 =       relu(conv1)(inplace=opts.inplace);
 	  val conv2 =       conv(relu1)(w=4,h=4,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias,
-	                                lr_scale=1f/opts.ntails,bias_scale=1f/opts.ntails);
+	                                lr_scale=scaleHead,bias_scale=scaleHead);
 	  val relu2 =       relu(conv2)(inplace=opts.inplace);
 
 	  // FC/reward prediction layers
@@ -106,7 +109,6 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 object BootstrapDQNestimator {
   trait Opts extends DQNestimator.Opts {
     var ntails = 8;
-    var doavg = false;
   }
   
   class Options extends Opts {}

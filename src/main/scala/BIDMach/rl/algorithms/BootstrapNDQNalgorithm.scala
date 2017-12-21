@@ -45,7 +45,13 @@ class BootstrapNDQNalgorithm(
 	var t_estimator:Estimator = null;
 	val dtimes = zeros(1,7);
 	val times = zeros(1,8);
-
+	
+	var debug1:Mat = null;
+	var debug2:Mat = null;
+	var debug3:Mat = null;
+	var debug4:Mat = null;
+	var debug5:Mat = null;
+		
 	def startup {
 		tic;
 		obs0 = null;
@@ -144,15 +150,14 @@ class BootstrapNDQNalgorithm(
 		val (obs0, rewards0, dones0) = parstepper(envs, VALID_ACTIONS(ractions), null, null, null);           // step through parallel envs
 
 		var actions = izeros(1,npar);
-		var action_probs:FMat = null;
 		val rand_actions = ones(nactions, npar) * (1f/nactions);
 		val targwin = math.max(opts.target_window, ndqn_max*2);
 		val printsteps0 = opts.print_steps;
 
 		val state_memory = zeros(envs(0).statedims\opts.nwindow\(npar*ndqn_max));
 		val action_memory = izeros(ndqn_max\npar);
-		val reward_memory = new Array[FMat](ndqn_max);
 		val done_memory = zeros(ndqn_max\npar);
+		val reward_memory = new Array[FMat](ndqn_max);
 		reward_plot = zeros(1, nsteps/printsteps0);
 
 		tic;
@@ -166,8 +171,8 @@ class BootstrapNDQNalgorithm(
 		myLogger.info("Started Training");
 		while (istep <= opts.nsteps && !done) {
 			//    if (render): envs[0].render()
-			val lr = opts.lr_schedule(istep-1);                                        // Update the decayed learning rate
-			val epsilon = opts.eps_schedule(istep-1);                                  // Get an epsilon for the eps-greedy policy
+			val lr = opts.lr_schedule(istep-1);                                      // Update the decayed learning rate
+			val epsilon = opts.eps_schedule(istep-1);                                // Get an epsilon for the eps-greedy policy
 			val epsilonvec = epsilonvec0 * epsilon;
 
 			var i = 0;
@@ -191,7 +196,7 @@ class BootstrapNDQNalgorithm(
 					probs(?,irange) = epsilonvec(0,irange) *@ rand_actions(?,irange) + (1-epsilonvec(0,irange)) *@ probs(?,irange);          
 				}
 				actions <-- multirnd(probs);                                           // Choose actions using the policy 
-				val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);           // step through parallel envs
+				val (obs, rewards, dones) = parstepper(envs, VALID_ACTIONS(actions), obs0, rewards0, dones0);   // step through parallel envs
 				for (i <- 0 until npar) {
 					new_lives(i) = envs(i).lives();
 				}
@@ -209,8 +214,15 @@ class BootstrapNDQNalgorithm(
 				saved_lives(0,igame) = envs(0).lives();
 				igame = (igame+1) % save_length;
 
-				val action_probs = probs(actions + irow(0->probs.ncols)*probs.nrows);  // Save performance data
-				if (opts.nexact > 0) {
+				debug1 = q_next0;
+				val q_full = q_next0.reshapeView(nactions, ntails*npar);               // Get action probabilities across tails
+				val p_full = (q_full == maxi(q_full));                                 // for entropy estimate
+				p_full ~ p_full / sum(p_full);                                         // Probabilities for all tails
+				val probs_full = p_full.reshapeView(nactions, ntails, npar).sum(irow(1)).reshapeView(nactions, npar) / ntails; // Average tails
+				val action_probs = probs_full(actions + actionColOffsets);   
+				action_probs ~ action_probs + (epsilonvec *@ (1 - action_probs));
+				
+				if (opts.nexact > 0) {                                                 // Save performance data
 					total_epochs += sum(dones(0->opts.nexact)).v.toInt;
 					block_reward += sum(rewards(0->opts.nexact)).v;
 					block_entropy -= sum(ln(action_probs(opts.nexact->npar))).v/(npar-opts.nexact);
@@ -227,7 +239,7 @@ class BootstrapNDQNalgorithm(
 					dones <-- (dones + (rewards != 0f) > 0f);
 				}
 
-				if (envs(0).opts.endEpochAtDeath) {                                    // Close epoch at death for certain evns like Breakout
+				if (envs(0).opts.endEpochAtDeath) {                                    // Close epoch at death for certain envs like Breakout
 					dones <-- (dones + (new_lives < old_lives) > 0f);
 				}
 				old_lives <-- new_lives;
@@ -236,7 +248,8 @@ class BootstrapNDQNalgorithm(
 				if (opts.thompson) {                                                   // Update every time for Thompson sampling
 				  itails <-- newtails;
 				} else {
-				  itails ~ (itails *@ (1 - dones)) + (newtails *@ dones);              // Or only at end of Epoch for Bootstrap DQN
+				  val intdones = int(dones);
+				  itails ~ (itails *@ (1 - intdones)) + (newtails *@ intdones);        // Or only at end of Epoch for Bootstrap DQN
 				}
 
 				state_memory(?,?,?,(i*npar)->((i+1)*npar)) = state;                    // At this state to buffers
@@ -250,17 +263,17 @@ class BootstrapNDQNalgorithm(
 				i += 1;
 			}
 			zstate ~ new_state - mean_state;
-			q_estimator.predict(zstate);                                             // Predict state values for the last unrolled state
-			val (q_next0, _) = q_estimator.getOutputs2; 
-			val q_next = q_next0.reshapeView(nactions, ntails*npar);
+			t_estimator.predict(zstate);
+			val (t_next0, _) = t_estimator.getOutputs2;
+			val t_next = t_next0.reshapeView(nactions, ntails*npar);	
 			val v_next0 = if (opts.doDDQN) {                                         // Use a double DQN prediction
-				val (_, best_actions) = maxi2(q_next);
-				t_estimator.predict(zstate);
-				val (t_next0, _) = t_estimator.getOutputs2;
-				val t_next = t_next0.reshapeView(nactions, ntails*npar);				
+				q_estimator.predict(zstate);                                           // Predict state values for the last unrolled state
+				val (q_next0, _) = q_estimator.getOutputs2; 
+				val q_next = q_next0.reshapeView(nactions, ntails*npar);
+				val (_, best_actions) = maxi2(q_next);	
 				t_next(best_actions + expActionColOffsets);
 			} else {                                                                 // Standard DQN prediction
-				maxi(q_next);
+				maxi(t_next);
 			}
 			val v_next = v_next0.reshapeView(ntails, npar);
 			times(5) = toc;

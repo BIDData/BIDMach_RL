@@ -18,10 +18,11 @@ opts.target_window = 50;                       // Interval to update target esti
 opts.print_steps = 20000;                      // Number of steps between printouts
 opts.nwindow = 4;                              // Sensing window = last n images in a state
 opts.init_moves = 4000;                        // Upper bound on random number of moves to take initially
-opts.nexact = 2;                               // Run the exact policy (without epsilon-noise) in this many threads for scoring
+opts.nexact = 2;                               // Run exact policy (no epsilon-noise) in this many threads for scoring
 opts.q_exact_policy = true;                    // Q-functions estimate exact policy values, not exploration policy value
 opts.lambda = 3;                               // Range of epsilon distribution
-opts.doDDQN = true;
+opts.doDDQN = true;                            // Use DDQN target, else max-Q target
+opts.vexp = 0.5f;                              // Optimizer exponent, 0.5 = RMSprop, 1 = natural gradient
 
 opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
@@ -30,9 +31,9 @@ opts.tensorFormat = Net.TensorNCHW;
 opts.lr_schedule = linterp(0f \ 1e-5f on
 			   1f \ 1e-5f, opts.nsteps); 
 
-opts.eps_schedule = loginterp(0f \ 0.3f on 
-			      0.9f \ 0.1f on
-			      1f \ 0.0001f, opts.nsteps);
+opts.eps_schedule = linterp(0f \ 0.3f on 
+			    0.9f \ 0.1f on
+			    1f \ 0.0001f, opts.nsteps);
 
 null
 }
