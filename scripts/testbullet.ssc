@@ -1,0 +1,8 @@
+
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.badlogic.gdx.tests.bullet._
+import com.badlogic.gdx.tests.BulletTestCollection
+
+val conf = new Lwjgl3ApplicationConfiguration();
+val app = new Lwjgl3Application(new BulletTestCollection(), conf)

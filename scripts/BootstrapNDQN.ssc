@@ -41,7 +41,7 @@ null
 opts.nhidden = 16;                      // Number of hidden layers for estimators
 opts.nhidden2 = 32;
 opts.nhidden3 = 256;
-opts.ntails = 16;
+opts.ntails = 8;
 
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;

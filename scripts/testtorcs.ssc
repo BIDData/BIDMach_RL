@@ -1,0 +1,40 @@
+import sys.process._;
+import java.lang.Thread;
+import java.io.File;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+import scala.concurrent.ExecutionContext.Implicits.global;
+import scala.concurrent.duration._
+
+val baseport = 3100;
+val nthreads = 8;
+
+val logfname = "/home/jfc/logs/torcs%d.log";
+
+val procs = new Array[java.lang.Process](nthreads);
+for (i <- 0 until nthreads) {
+    val port = baseport + i;
+    val logfile = new File(logfname format port);
+    val pb = new java.lang.ProcessBuilder("torcs", "-p", port.toString);
+    pb.redirectErrorStream(true);
+    pb.redirectOutput(java.lang.ProcessBuilder.Redirect.to(logfile));
+    procs(i) = pb.start();
+}
+
+
+def runall() = {
+    tic;
+    val futs = new Array[Future[Int] ](nthreads);
+    for (i <- 0 until nthreads) {
+	val port = baseport + i;
+	val args = Array("scr.SimpleDriver", "port:"+port);
+	futs(i) = Future[Int] {
+	    (new scr.Client).startup(args);
+	    i;
+	}
+    }
+    for (i <- 0 until nthreads) {
+	Await.ready(futs(i), 300.seconds);
+    }
+    toc;
+}

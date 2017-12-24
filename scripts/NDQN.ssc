@@ -28,8 +28,8 @@ opts.hasBias = true;
 opts.tensorFormat = Net.TensorNCHW;
 //opts.clipByValue = 1f;                         // gradient clipping
 {
-opts.lr_schedule = linterp(0f \ 1e-5f on
-			   1f \ 1e-5f, opts.nsteps); 
+opts.lr_schedule = linterp(0f \ 3e-6f on
+			   1f \ 3e-6f, opts.nsteps); 
 
 opts.eps_schedule = linterp(0f \ 0.3f on 
 			    0.9f \ 0.1f on
