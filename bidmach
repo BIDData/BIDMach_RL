@@ -25,7 +25,7 @@ else
 fi
 export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8 ${LOG_OPTS} ${JAVA_OPTS}" # Set as much memory as possible
 
-BIDMAT_VERSION=`echo lib/BIDMat-*-cpu-*.jar | sed 's/.*BIDMat-//' | sed 's/-cpu.*\.jar//'`
+BIDMACHRL_VERSION=`echo lib/BIDMachRL-*-cpu-*.jar | sed 's/.*BIDMachRL-//' | sed 's/-cpu.*\.jar//'`
 
 OSS=`uname -a`
 if [ "$ARCH" = "" ]; then
@@ -57,7 +57,7 @@ fi
 
 cd lib
 BIDMACH_JARS=`echo *.jar`
-BIDMACH_LIBS="${BIDMACH_ROOT}/target/BIDMachRL-${BIDMAT_VERSION}.jar"
+BIDMACH_LIBS="${BIDMACH_ROOT}/target/BIDMachRL-${BIDMACHRL_VERSION}.jar"
 for lib in ${BIDMACH_JARS}; do
     if [[ "$lib" != IScala* && "$lib" != scala* ]]; then
 	BIDMACH_LIBS="${BIDMACH_LIBS};${LIBDIR}/${lib}"
