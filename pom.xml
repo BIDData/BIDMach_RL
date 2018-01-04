@@ -6,13 +6,13 @@
   <groupId>BIDMach</groupId>
   <artifactId>BIDMachRL</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.14.beta</version>
+  <version>2.0.15.beta</version>
   <name>BIDMachRL</name>
   <description>Reinforcement Learning for BIDMach</description>
   <properties>
     <scala.version>2.11.7</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
-    <bidmach.version>2.0.14-cuda8.0beta</bidmach.version>
+    <bidmach.version>2.0.15-cuda8.0beta</bidmach.version>
     <jline.version>${scala.binary.version}</jline.version>
     <libgdx.version>1.9.8</libgdx.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
