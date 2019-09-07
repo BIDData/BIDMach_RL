@@ -32,30 +32,32 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  Net.initDefaultNodeSet;
 
 	  // Input layers 
-	  val in =      input();
-	  val actions = input();
-	  val target =  input();
+	  val in =           input();
+	  val actions =      input();
+	  val target =       input();
 
 	  // Random constants
-	  val minus1 =  const(-1f)();
+	  val minus1 =       const(-1f)();
 
 	  // Convolution layers
-	  val conv1 =   conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias);
-	  val relu1 =   relu(conv1)(inplace=opts.inplace);
-	  val conv2 =   conv(relu1)(w=4,h=4,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias);
-	  val relu2 =   relu(conv2)(inplace=opts.inplace);
+	  val conv1 =        conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias);
+	  val relu1 =        relu(conv1)(inplace=opts.inplace);
+	  val conv2 =        conv(relu1)(w=4,h=4,nch=opts.nhidden2,stride=2,pad=0,hasBias=opts.hasBias);
+	  val relu2 =        relu(conv2)(inplace=opts.inplace);
 
 	  // FC/reward prediction layers
-	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
-	  val relu3 =   relu(fc3)(inplace=opts.inplace);
-	  val preds =   linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias); 
+	  val fc3 =          linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
+	  val relu3 =        relu(fc3)(inplace=opts.inplace);
+          val prednodenum =  Net.getDefaultNodeNum
+	  val preds =        linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias); 
 
 	  // Action loss layers
-	  val diff =    target - preds(actions);
-	  val loss =    diff *@ diff;                     // Base loss layer.
+	  val diff =         target - preds(actions);
+          val lossnodenum =  Net.getDefaultNodeNum
+	  val loss =         diff *@ diff;                     // Base loss layer.
 
 	  // Total weighted negloss, maximize this
-	  val out =     loss *@ minus1 
+	  val out =          loss *@ minus1 
 
 	  opts.nodeset = Net.getDefaultNodeSet;
 	  
@@ -63,8 +65,8 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  
 	  net.createLayers;
 	  
-	  predsLayer = preds.myLayer;
-	  lossLayer = loss.myLayer;
+	  predsLayer = net.layers(prednodenum);
+	  lossLayer = net.layers(lossnodenum);
 	  
 	  net;
   }

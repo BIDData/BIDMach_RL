@@ -11,7 +11,7 @@
   <description>Reinforcement Learning for BIDMach</description>
   <properties>
     <nativeVersion>2.0.0</nativeVersion>
-    <bidmach.version>2.1.13-cuda9.2</bidmach.version>
+    <bidmach.version>2.1.14-cuda9.2</bidmach.version>
     <scala.version>2.11.11</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
     <jline.version>${scala.binary.version}</jline.version>
