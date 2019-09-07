@@ -41,7 +41,7 @@ envopts.rom_dir=rom_dir;
 val gamename0 = System.getProperty("user.arg0");
 val gamename = if (gamename0.asInstanceOf[AnyRef] != null) gamename0 else "Pong";
 println("gamename = %s" format gamename);
-opts.logfile = "logA3C_"+gamename+".txt"
+opts.logfile = "logNDQN_"+gamename+".txt"
 
 :load gamedefs.ssc
 

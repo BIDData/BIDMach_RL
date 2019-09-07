@@ -71,18 +71,22 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
 	  val fc3 =     linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
 	  val relu3 =   relu(fc3)(inplace=opts.inplace); 
 	  val ppreds =  linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias);
+          val vprednodenum =  Net.getDefaultNodeNum
 	  val vpreds =  linear(relu3)(outdim=1,hasBias=opts.hasBias);
 
 	  // Probability layers
+          val probsnodenum =  Net.getDefaultNodeNum
 	  val probs =   softmax(ppreds *@ invtemp); 
 
 	  // Entropy layers
 	  val logprobs= ln(probs + eps);
+          val entropynodenum =  Net.getDefaultNodeNum
 	  val entropy = (logprobs dot probs) *@ minus1;
 	  val nentropy= Net.defaultNodeList.length;
 
 	  // Value loss layers
 	  val diff =    vtarget - vpreds;
+          val lossnodenum =  Net.getDefaultNodeNum
 	  val loss =    diff *@ diff;     
 	  
 	  // Policy gradient
@@ -98,10 +102,10 @@ class A3CestimatorV(opts:A3CestimatorV.Opts = new A3CestimatorV.Options) extends
 	  
 	  net.createLayers;
 	  
-	  vpredsLayer = vpreds.myLayer;
-    probsLayer = probs.myLayer;
-    entropyLayer = entropy.myLayer;
-    lossLayer = loss.myLayer;
+	  vpredsLayer = net.layers(vprednodenum);
+    probsLayer = net.layers(probsnodenum);
+    entropyLayer = net.layers(entropynodenum);
+    lossLayer = net.layers(lossnodenum);
     
 	  net
   }

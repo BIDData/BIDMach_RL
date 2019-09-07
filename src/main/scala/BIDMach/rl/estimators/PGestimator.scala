@@ -67,15 +67,19 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
   	// FC/reward prediction layers
   	val fc3 =     linear(relu2)(outdim=opts.nhidden3,hasBias=opts.hasBias);
   	val relu3 =   relu(fc3)(inplace=opts.inplace);
+        val predsnodenum =  Net.getDefaultNodeNum
   	val preds =   linear(relu3)(outdim=opts.nactions,hasBias=opts.hasBias); 
 
   	// Probability/ advantage layers
+        val probsnodenum =  Net.getDefaultNodeNum
   	val probs =   softmax(preds / temp); 
   	val pmean =   preds dot probs;
+        val advtgsnodenum =  Net.getDefaultNodeNum
   	val advtgs =  preds - pmean;
 
   	// Entropy layers
   	val logprobs = ln(probs + eps);
+        val entropynodenum =  Net.getDefaultNodeNum
   	val entropy =  (logprobs dot probs) *@ minus1;
   	val nentropy=  Net.defaultNodeList.length;
 
@@ -85,6 +89,7 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
   	val lpa =     logprobs(actions) *@ temp;  
   	//	  val weight =  fn2(target - apreds, aa)(fwdfn=weightedPGfn);
   	val weight =  target - apreds;
+        val gainnodenum =  Net.getDefaultNodeNum
   	val gain =    weight *@ weight;
 
   	// Total weighted negloss, maximize this
@@ -96,11 +101,11 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
 
   	net.createLayers;
 
-  	predsLayer = preds.myLayer;
-  	probsLayer = probs.myLayer;
-  	advtgsLayer = advtgs.myLayer;
-  	entropyLayer = entropy.myLayer;
-  	gainLayer = gain.myLayer;
+  	predsLayer = net.layers(predsnodenum);
+  	probsLayer = net.layers(probsnodenum);
+  	advtgsLayer = net.layers(advtgsnodenum);
+  	entropyLayer = net.layers(entropynodenum);
+  	gainLayer = net.layers(gainnodenum);
 
   	net;
   }

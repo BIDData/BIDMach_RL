@@ -57,6 +57,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 	  // FC/reward prediction layers
 	  val fc3 =         linear(relu2)(outdim=opts.nhidden3*opts.ntails,hasBias=opts.hasBias);
 	  val relu3 =       relu(fc3)(inplace=opts.inplace);
+          val predsnodenum =  Net.getDefaultNodeNum
 	  val preds =       linear(relu3)(outdim=opts.nactions*opts.ntails,hasBias=opts.hasBias,ngroups=opts.ntails); 
 	  
 	  // Action loss layers
@@ -65,6 +66,7 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 	  
 	  // Apply bootstrap sample weights to the losses
 	  val tloss =       sum(stackloss *@ bootsample);
+          val lossnodenum =  Net.getDefaultNodeNum
 	  val loss =        tloss *@ invntails;
 	  
 	  // Total weighted negloss, maximize this
@@ -76,8 +78,8 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 	  
 	  net.createLayers;
 	  
-	  predsLayer = preds.myLayer;
-	  lossLayer = loss.myLayer;
+	  predsLayer = net.layers(predsnodenum);
+	  lossLayer = net.layers(lossnodenum);
 	  
 	  net;
   }
