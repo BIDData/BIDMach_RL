@@ -29,7 +29,7 @@ else
     export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8 ${LOG_OPTS} ${JAVA_OPTS}"
 fi
 
-BIDMACHRL_VERSION=`echo lib/BIDMachRL-*-cpu-*.jar | sed 's/.*BIDMachRL-//' | sed 's/-cpu.*\.jar//'`
+BIDMACHRL_VERSION=`echo target/BIDMachRL-*.jar | sed 's/.*BIDMachRL-//' | sed 's/\.jar//'`
 
 OSS=`uname -a`
 if [ "$ARCH" = "" ]; then
@@ -40,13 +40,17 @@ if [[ "$OSS" == Darwin* ]] ; then
 	    ARCH="x86_64"
     fi
     OSS="apple"
+    JUPYTER_DIR="${HOME}/Library/Julyter"
 elif [[ "$OSS" == Linux* ]] ; then
     OSS="linux"
+    JUPYTER_DIR="${HOME}/.local/share/jupyter"
 elif [[ "$OSS" == CYGWIN* ]] ; then
     if [[ "$OSS" == *WOW* ]] ; then
         ARCH="x86_64"
     fi
 	OSS="windows"
+    JUPYTER_DIR=`echo $APPDATA | sed 's_\\\\_/_g' | sed 's_^\([A-Z]\):_/cygdrive/\1_'`
+    JUPYTER_DIR="${JUPYTER_DIR}/jupyter"
 else
     echo "OS not supported" $OSS
     exit 1
@@ -55,6 +59,7 @@ fi
 if [ "$OSS" = "windows" ]; then
     if [ ! "${JAVA_HOME}" = "" ]; then
         JAVA_HOME=`${BIDMACH_ROOT}/shortpath.bat "${JAVA_HOME}"`
+        JAVA_HOME=`echo ${JAVA_HOME} | tr -d '\r'`
 	    export JAVA_HOME=`echo ${JAVA_HOME} | sed 's_\\\\_/_g'`/bin
     fi
 fi
@@ -63,17 +68,14 @@ cd lib
 BIDMACH_JARS=`echo *.jar`
 BIDMACH_LIBS="${BIDMACH_ROOT}/target/BIDMachRL-${BIDMACHRL_VERSION}.jar"
 for lib in ${BIDMACH_JARS}; do
-    if [[ "$lib" != IScala* && "$lib" != scala* ]]; then
 	BIDMACH_LIBS="${BIDMACH_LIBS};${LIBDIR}/${lib}"
-    fi
 done
 
 popd > /dev/null
 
-TOOL_LIBS="${BIDMACH_ROOT}/conf;${JAVA_HOME}/lib/tools.jar;${LIBDIR}/IScala-1.0.0.jar"
 
-ALL_LIBS="${TOOL_LIBS};\
-${BIDMACH_LIBS}"
+TOOL_LIBS="${BIDMACH_ROOT}/conf;${JAVA_HOME}/lib/tools.jar"
+ALL_LIBS="${TOOL_LIBS};${BIDMACH_LIBS}"
 
 if [ "$OSS" = "windows" ]; then
     if [ ! "${CUDA_PATH}" = "" ]; then
@@ -85,25 +87,33 @@ else
     ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
 fi
 
-userargs=""
-if [ "$2" != "" ]; then
-    userargs="-Duser.arg0=$2"
-    j=1;
-    for i in ${*:3}; do
-	userargs="$userargs -Duser.arg$j=$i"
-	j=$((j+1))
-    done
-fi
 
 if [ "$1" = "notebook" ]; then
     shift 1
-    if [ ! -z "$@" ]; then
-        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"${MEMSIZE}\", \"-Xms128M\", \"-Dfile.encoding=UTF-8\", \"org.refptr.iscala.IScala\", \"--profile\", \"{connection_file}\", \"--parent\", \"$@\"]"
-    else
-        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"${MEMSIZE}\", \"-Xms128M\", \"-Dfile.encoding=UTF-8\", \"org.refptr.iscala.IScala\", \"--profile\", \"{connection_file}\", \"--parent\"]"
-    fi
-    ipython notebook --profile=scala --KernelManager.kernel_cmd="$KERNEL_CMD"
+    KERNEL_CMD="[\"java\", \"-Xms128M\", \"${MEMSIZE}\", \"-Dfile.encoding=UTF-8\", \"-cp\", \"${ALL_LIBS}\",
+                 \"-Dcoursier.mainJar=jupyter.scala.JupyterScala\", \"jupyter.scala.JupyterScala\",
+                 \"--id\", \"bidmach\", \"--name\", \"BIDMach\", \"--connection-file\", \"{connection_file}\"]"
+    KERNEL_JSON="{\"language\" : \"bidmach\", \"display_name\" : \"BIDMach\", \"argv\" : ${KERNEL_CMD} }"
+    mkdir -p "${JUPYTER_DIR}/kernels/bidmach"
+    echo "${KERNEL_JSON}" > ${JUPYTER_DIR}/kernels/bidmach/kernel.json
+    cp ${BIDMACH_ROOT}/logo-64x64.png ${JUPYTER_DIR}/kernels/bidmach
+    jupyter notebook --KernelManager.kernel_cmd="${KERNEL_CMD}" $@
 else
-    ${BIDMACH_ROOT}/scripts/scala/scala -Dscala.repl.maxprintstring=8000 "${userargs}" -nobootcp -toolcp "${TOOL_LIBS}" -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmach_init.scala  ${1}
+    userargs=""
+    if [ "$2" != "" ]; then
+        userargs="-Duser.arg0=$2"
+        j=1;
+        for i in ${*:3}; do
+            userargs="$userargs -Duser.arg$j=$i"
+            j=$((j+1))
+        done
+    fi
+    runscript=""
+    if [ "$1" != "" ]; then
+        runscript="-I ${1}"
+    fi
+    ${BIDMACH_ROOT}/command/scala -Dscala.repl.maxprintstring=8000 ${userargs} -nobootcp -toolcp "${ALL_LIBS}" \
+                   -cp "${ALL_LIBS}" -Yrepl-sync -I ${LIBDIR}/bidmach_init.sc $runscript
 fi
+
 
