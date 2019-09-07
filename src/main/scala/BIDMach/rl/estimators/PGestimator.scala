@@ -51,12 +51,12 @@ class PGestimator(opts:PGestimator.Opts = new PGestimator.Options) extends Estim
   	val target =  input();
 
   	// Settable param layers;
-  	val temp  =   const(1f);
-  	val entropyw= const(1f);
+  	val temp  =   const(1f)();
+  	val entropyw= const(1f)();
 
   	// Random constants
-  	val minus1 =  const(-1f);
-  	val eps =     const(1e-2f);
+  	val minus1 =  const(-1f)();
+  	val eps =     const(1e-2f)();
 
   	// Convolution layers
   	val conv1 =   conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias);

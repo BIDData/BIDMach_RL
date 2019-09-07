@@ -43,8 +43,8 @@ class BootstrapDQNestimator(val opts:BootstrapDQNestimator.Opts = new BootstrapD
 	  val bootsample =  input();
 
 	  // Constants
-	  val minus1 =      const(-1f);
-	  val invntails =   const(1f/opts.ntails);
+	  val minus1 =      const(-1f)();
+	  val invntails =   const(1f/opts.ntails)();
 
 	  // Convolution layers
 	  val conv1 =       conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias,

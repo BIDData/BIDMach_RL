@@ -14,6 +14,7 @@ import jcuda.jcudnn.JCudnn._
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import jupyter.api.Publish
 
 
 @SerialVersionUID(100L)
@@ -53,7 +54,7 @@ abstract class Algorithm(opts:Algorithm.Opts = new Algorithm.Options) extends Se
     done = true;
   }
   
-  def animate(rate:Float = 30f, iscale:Float=500) = {
+  def animate(rate:Float = 30f, iscale:Float=500)(implicit publish:Publish) = {
     val h = saved_frames.dims(0);
     val w = saved_frames.dims(1);
     val img = Image(saved_frames(?,?,0).reshapeView(h, w)*iscale);

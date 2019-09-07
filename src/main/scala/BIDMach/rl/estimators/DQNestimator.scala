@@ -37,7 +37,7 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  val target =  input();
 
 	  // Random constants
-	  val minus1 =  const(-1f);
+	  val minus1 =  const(-1f)();
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias);

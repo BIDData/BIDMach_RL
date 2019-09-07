@@ -51,13 +51,13 @@ class A3CestimatorQ(opts:A3CestimatorQ.Opts = new A3CestimatorQ.Options) extends
 	  val target =  input();
 	  
 	  // Settable param layers;
-	  invtemp  =    constant(1f);
-	  entropyw =    constant(1f);
-	  gradw =       constant(1f);
+	  invtemp  =    constant(1f)();
+	  entropyw =    constant(1f)();
+	  gradw =       constant(1f)();
 
 	  // Random constants
-	  val minus1 =  const(-1f);
-	  val eps =     const(1e-6f);
+	  val minus1 =  const(-1f)();
+	  val eps =     const(1e-6f)();
 
 	  // Convolution layers
 	  val conv1 =   conv(in)(w=8,h=8,nch=opts.nhidden,stride=4,pad=0,hasBias=opts.hasBias);
