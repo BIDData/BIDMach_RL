@@ -68,7 +68,7 @@ class DQNestimator(opts:DQNestimator.Opts = new DQNestimator.Options) extends Es
 	  predsLayer = net.layers(prednodenum);
 	  lossLayer = net.layers(lossnodenum);
 	  
-	  net;
+      net;
   }
 
   override val net = createNet;

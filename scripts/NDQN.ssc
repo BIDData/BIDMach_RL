@@ -12,10 +12,11 @@ opts.discount_factor = 0.99f;                  // Reward discount factor
 opts.vel_decay = 0.9f;                         // Velocity (momentum) decay for optimizer
 opts.gsq_decay = 0.99f;                        // Squared gradient memory decay factor for MSProp
 
-opts.nsteps = 5000000;                         // Number of steps to run (game actions per environment)
+opts.nsteps = 1000000;                         // Number of steps to run (game actions per environment)
 opts.ndqn = 4;                                 // Number of DQN steps per update
 opts.target_window = 50;                       // Interval to update target estimator from q-estimator
 opts.print_steps = 20000;                      // Number of steps between printouts
+opts.save_length = 10000
 opts.nwindow = 4;                              // Sensing window = last n images in a state
 opts.init_moves = 4000;                        // Upper bound on random number of moves to take initially
 opts.nexact = 2;                               // Run exact policy (no epsilon-noise) in this many threads for scoring
@@ -41,7 +42,7 @@ null
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;
 opts.nhidden3 = 256;
-
+opts.journal = "../journal/saveNDQN_Pong_%03d.fmat.lz4"
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
 val gamename0 = System.getProperty("user.arg0");
@@ -63,5 +64,7 @@ model.startup;
 
 println("\nRunning training in the background.\nSaving to file '%s' in the current directory.\nExamine the 'model' variable to track learning state.\n" format opts.logfile);
 
-model.launchTrain
-// model.train
+//model.launchTrain
+model.train
+
+model.q_estimator.net.save("../models/NDQNpong/")

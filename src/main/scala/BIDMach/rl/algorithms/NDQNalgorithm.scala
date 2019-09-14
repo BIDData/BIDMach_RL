@@ -34,6 +34,7 @@ class NDQNalgorithm(
 	var total_epochs = 0;
 	var total_time = 0f;
 	var igame = 0;
+	var ijournal = 0;
 	var state:FMat = null;
 	var zstate:FMat = null;
 	var mean_state:FMat = null;
@@ -42,6 +43,7 @@ class NDQNalgorithm(
 	var actionColOffsets:IMat = null;
 	var ndqn_max:Int = 0;
 	var xhist:FMat = null;
+    var journal:FMat = null;
 	
 	var q_estimator:Estimator = null;
 	var t_estimator:Estimator = null;
@@ -69,6 +71,9 @@ class NDQNalgorithm(
 	  saved_dones = zeros(1, save_length);
 	  saved_lives = zeros(1, save_length);
 	  saved_preds = zeros(nactions, save_length);
+      if (opts.journal.asInstanceOf[AnyRef] != null) { 
+        journal = zeros(envs(0).statedims\npar\save_length);
+      }
 	  ndqn_max = if (opts.ndqn_max == 0) opts.ndqn * 4 else opts.ndqn_max;
 	  xhist = zeros(1, ndqn_max);
 	  actionColOffsets = irow(0->npar) * nactions;
@@ -198,6 +203,15 @@ class NDQNalgorithm(
   			saved_dones(0,igame) = dones(0);
   			saved_lives(0,igame) = envs(0).lives();
   			igame = (igame+1) % save_length;
+            if (opts.journal.asInstanceOf[AnyRef] != null) { 
+              for (i <- 0 until npar) { 
+                journal(?,?,i,igame) = obs(i).reshapeView(envs(0).statedims\1\1);
+              }
+              if (igame == 0) { 
+                saveFMat(opts.journal format ijournal, journal);
+                ijournal += 1;
+              }
+            }
   			
   			val action_probs = probs(actions + irow(0->probs.ncols)*probs.nrows);
   			if (opts.nexact > 0) {
@@ -303,6 +317,7 @@ object NDQNalgorithm {
   	var nexact = 0;                                  // Score the true policy only (in envs 0->nexact)
   	var lambda = 10f;                                // Spread ratio of per-policy epsilons
   	var doDDQN = false;
+    var journal:String = null;
   	
   	var lr_schedule:FMat = null;                     // Learning rate schedule
   	var eps_schedule:FMat = null;                    // Epsilon schedule
