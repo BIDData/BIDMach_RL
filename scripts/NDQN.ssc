@@ -42,11 +42,11 @@ null
 opts.nhidden = 16;                             // Number of hidden layers for estimators
 opts.nhidden2 = 32;
 opts.nhidden3 = 256;
-opts.journal = "../journal/saveNDQN_Pong_%03d.fmat.lz4"
 val envopts = new AtariEnvironment.Options
 envopts.rom_dir=rom_dir;
 val gamename0 = System.getProperty("user.arg0");
 val gamename = if (gamename0.asInstanceOf[AnyRef] != null) gamename0 else "Pong";
+opts.journal = "../journal/saveNDQN_"+gamename+"_%03d.fmat.lz4"
 println("gamename = %s" format gamename);
 opts.logfile = "logNDQN_"+gamename+".txt"
 
